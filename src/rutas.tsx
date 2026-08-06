@@ -3,7 +3,8 @@ import { Layout } from './componentes/Layout';
 import { Clientes } from './paginas/Clientes';
 import { Expedientes } from './paginas/Expedientes';
 import { ExpedienteDetalle } from './paginas/ExpedienteDetalle';
-import { Pendiente } from './paginas/Pendiente';
+import { Presupuestos } from './paginas/Presupuestos';
+import { Agenda } from './paginas/Agenda';
 
 export const router = createBrowserRouter([
   {
@@ -14,8 +15,8 @@ export const router = createBrowserRouter([
       { path: 'clientes', element: <Clientes /> },
       { path: 'expedientes', element: <Expedientes /> },
       { path: 'expedientes/:id', element: <ExpedienteDetalle /> },
-      { path: 'presupuestos', element: <Pendiente titulo="Presupuestos" /> },
-      { path: 'agenda', element: <Pendiente titulo="Agenda" /> },
+      { path: 'presupuestos', element: <Presupuestos /> },
+      { path: 'agenda', element: <Agenda /> },
     ],
   },
 ]);
