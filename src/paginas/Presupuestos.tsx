@@ -319,9 +319,17 @@ function FormularioFirma({
         gap: 10,
       }}
     >
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Expediente</span>
-        <select style={campo} value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)} required>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor={`firma-${presupuesto.id}-expediente`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Expediente
+        </label>
+        <select
+          id={`firma-${presupuesto.id}-expediente`}
+          style={campo}
+          value={expedienteId}
+          onChange={(e) => setExpedienteId(e.target.value)}
+          required
+        >
           <option value="" disabled>
             Elegí un expediente
           </option>
@@ -331,22 +339,40 @@ function FormularioFirma({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
       {necesitaCliente && (
         <>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Nombre</span>
-            <input style={campo} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Apellido</span>
-            <input style={campo} value={apellido} onChange={(e) => setApellido(e.target.value)} required />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>DNI</span>
-            <input style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
-          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor={`firma-${presupuesto.id}-nombre`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              Nombre
+            </label>
+            <input
+              id={`firma-${presupuesto.id}-nombre`}
+              style={campo}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor={`firma-${presupuesto.id}-apellido`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              Apellido
+            </label>
+            <input
+              id={`firma-${presupuesto.id}-apellido`}
+              style={campo}
+              value={apellido}
+              onChange={(e) => setApellido(e.target.value)}
+              required
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor={`firma-${presupuesto.id}-dni`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              DNI
+            </label>
+            <input id={`firma-${presupuesto.id}-dni`} style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
+          </div>
         </>
       )}
 
@@ -451,16 +477,18 @@ function FormularioNuevoPresupuesto({
       }}
     >
       <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 16, fontSize: 13 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label htmlFor="nuevo-presupuesto-cliente-existente" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <input
+            id="nuevo-presupuesto-cliente-existente"
             type="radio"
             checked={usaClienteExistente}
             onChange={() => setUsaClienteExistente(true)}
           />
           Cliente existente
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label htmlFor="nuevo-presupuesto-contacto-nuevo" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <input
+            id="nuevo-presupuesto-contacto-nuevo"
             type="radio"
             checked={!usaClienteExistente}
             onChange={() => setUsaClienteExistente(false)}
@@ -470,9 +498,17 @@ function FormularioNuevoPresupuesto({
       </div>
 
       {usaClienteExistente ? (
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-          <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Cliente</span>
-          <select style={campo} value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+          <label htmlFor="nuevo-presupuesto-cliente" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+            Cliente
+          </label>
+          <select
+            id="nuevo-presupuesto-cliente"
+            style={campo}
+            value={clienteId}
+            onChange={(e) => setClienteId(e.target.value)}
+            required
+          >
             <option value="" disabled>
               Elegí un cliente
             </option>
@@ -482,36 +518,53 @@ function FormularioNuevoPresupuesto({
               </option>
             ))}
           </select>
-        </label>
+        </div>
       ) : (
         <>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Nombre del contacto</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor="nuevo-presupuesto-contacto-nombre" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              Nombre del contacto
+            </label>
             <input
+              id="nuevo-presupuesto-contacto-nombre"
               style={campo}
               value={contactoNombre}
               onChange={(e) => setContactoNombre(e.target.value)}
               required
             />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Teléfono</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor="nuevo-presupuesto-contacto-telefono" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              Teléfono
+            </label>
             <input
+              id="nuevo-presupuesto-contacto-telefono"
               style={campo}
               value={contactoTelefono}
               onChange={(e) => setContactoTelefono(e.target.value)}
             />
-          </label>
+          </div>
         </>
       )}
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Concepto</span>
-        <input style={campo} value={concepto} onChange={(e) => setConcepto(e.target.value)} required />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Monto ($)</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-presupuesto-concepto" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Concepto
+        </label>
         <input
+          id="nuevo-presupuesto-concepto"
+          style={campo}
+          value={concepto}
+          onChange={(e) => setConcepto(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-presupuesto-monto" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Monto ($)
+        </label>
+        <input
+          id="nuevo-presupuesto-monto"
           style={campo}
           type="number"
           min="0"
@@ -520,7 +573,7 @@ function FormularioNuevoPresupuesto({
           onChange={(e) => setMonto(e.target.value)}
           required
         />
-      </label>
+      </div>
 
       {error && (
         <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>

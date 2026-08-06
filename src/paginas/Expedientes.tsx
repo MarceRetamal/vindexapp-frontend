@@ -220,9 +220,12 @@ function FormularioNuevoExpediente({
         </div>
       )}
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Cliente</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-expediente-cliente" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Cliente
+        </label>
         <select
+          id="nuevo-expediente-cliente"
           style={campo}
           value={clienteId}
           onChange={(e) => setClienteId(e.target.value)}
@@ -237,23 +240,37 @@ function FormularioNuevoExpediente({
             </option>
           ))}
         </select>
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Carátula</span>
-        <input style={campo} value={caratula} onChange={(e) => setCaratula(e.target.value)} required />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Número</span>
-        <input style={campo} value={numero} onChange={(e) => setNumero(e.target.value)} />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Fuero</span>
-        <input style={campo} value={fuero} onChange={(e) => setFuero(e.target.value)} />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Juzgado</span>
-        <input style={campo} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
-      </label>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-expediente-caratula" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Carátula
+        </label>
+        <input
+          id="nuevo-expediente-caratula"
+          style={campo}
+          value={caratula}
+          onChange={(e) => setCaratula(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-expediente-numero" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Número
+        </label>
+        <input id="nuevo-expediente-numero" style={campo} value={numero} onChange={(e) => setNumero(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-expediente-fuero" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Fuero
+        </label>
+        <input id="nuevo-expediente-fuero" style={campo} value={fuero} onChange={(e) => setFuero(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor="nuevo-expediente-juzgado" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Juzgado
+        </label>
+        <input id="nuevo-expediente-juzgado" style={campo} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
+      </div>
 
       {error && (
         <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>

@@ -209,22 +209,47 @@ function FormularioNuevoCliente({ onCreado }: { onCreado: () => void }) {
         gap: 12,
       }}
     >
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Nombre</span>
-        <input style={campo} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Apellido</span>
-        <input style={campo} value={apellido} onChange={(e) => setApellido(e.target.value)} required />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>DNI</span>
-        <input style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>WhatsApp</span>
-        <input style={campo} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-      </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-cliente-nombre" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Nombre
+        </label>
+        <input
+          id="nuevo-cliente-nombre"
+          style={campo}
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-cliente-apellido" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Apellido
+        </label>
+        <input
+          id="nuevo-cliente-apellido"
+          style={campo}
+          value={apellido}
+          onChange={(e) => setApellido(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-cliente-dni" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          DNI
+        </label>
+        <input id="nuevo-cliente-dni" style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nuevo-cliente-whatsapp" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          WhatsApp
+        </label>
+        <input
+          id="nuevo-cliente-whatsapp"
+          style={campo}
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+        />
+      </div>
 
       {error && (
         <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>

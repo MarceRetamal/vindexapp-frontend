@@ -302,9 +302,12 @@ function FormularioNuevaAudiencia({
         </div>
       )}
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Expediente</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor="nueva-audiencia-expediente" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Expediente
+        </label>
         <select
+          id="nueva-audiencia-expediente"
           style={campo}
           value={expedienteId}
           onChange={(e) => setExpedienteId(e.target.value)}
@@ -319,21 +322,27 @@ function FormularioNuevaAudiencia({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Tipo</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nueva-audiencia-tipo" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Tipo
+        </label>
         <input
+          id="nueva-audiencia-tipo"
           style={campo}
           value={tipo}
           onChange={(e) => setTipo(e.target.value)}
           placeholder="Audiencia de conciliación"
           required
         />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Modalidad</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nueva-audiencia-modalidad" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Modalidad
+        </label>
         <select
+          id="nueva-audiencia-modalidad"
           style={campo}
           value={modalidad}
           onChange={(e) => setModalidad(e.target.value as (typeof MODALIDADES)[number] | '')}
@@ -345,25 +354,38 @@ function FormularioNuevaAudiencia({
             </option>
           ))}
         </select>
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Fecha</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nueva-audiencia-fecha" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Fecha
+        </label>
         <input
+          id="nueva-audiencia-fecha"
           style={campo}
           type="date"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
           required
         />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Hora</span>
-        <input style={campo} type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <span style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>Lugar</span>
-        <input style={campo} value={lugar} onChange={(e) => setLugar(e.target.value)} />
-      </label>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor="nueva-audiencia-hora" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Hora
+        </label>
+        <input
+          id="nueva-audiencia-hora"
+          style={campo}
+          type="time"
+          value={hora}
+          onChange={(e) => setHora(e.target.value)}
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor="nueva-audiencia-lugar" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Lugar
+        </label>
+        <input id="nueva-audiencia-lugar" style={campo} value={lugar} onChange={(e) => setLugar(e.target.value)} />
+      </div>
 
       {error && (
         <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>
