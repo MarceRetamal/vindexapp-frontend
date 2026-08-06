@@ -5,6 +5,7 @@
     "module": "ESNext",
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
+    "types": ["vite/client"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
