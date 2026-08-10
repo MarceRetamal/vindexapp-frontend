@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { api, type Cliente } from '../api/cliente';
+import { FormularioCliente } from '../componentes/FormularioCliente';
 
 export function Clientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -52,8 +54,8 @@ export function Clientes() {
       </header>
 
       {mostrarFormulario && (
-        <FormularioNuevoCliente
-          onCreado={() => {
+        <FormularioCliente
+          onGuardado={() => {
             setMostrarFormulario(false);
             cargar();
           }}
@@ -103,41 +105,43 @@ export function Clientes() {
 
 function FilaCliente({ cliente, numero }: { cliente: Cliente; numero: number }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        padding: '14px 4px',
-        borderBottom: '1px solid var(--linea)',
-      }}
-    >
-      <span
+    <Link to={`/clientes/${cliente.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <div
         style={{
-          fontFamily: 'var(--fuente-dato)',
-          fontSize: 12,
-          color: 'var(--tinta-suave)',
-          width: 28,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '14px 4px',
+          borderBottom: '1px solid var(--linea)',
         }}
       >
-        {String(numero).padStart(2, '0')}
-      </span>
-      <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--acento)', opacity: 0.4 }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, fontSize: 14 }}>
-          {cliente.apellido}, {cliente.nombre}
+        <span
+          style={{
+            fontFamily: 'var(--fuente-dato)',
+            fontSize: 12,
+            color: 'var(--tinta-suave)',
+            width: 28,
+          }}
+        >
+          {String(numero).padStart(2, '0')}
+        </span>
+        <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--acento)', opacity: 0.4 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>
+            {cliente.apellido}, {cliente.nombre}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginTop: 2 }}>
+            {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
+            {cliente.whatsapp ? ` · ${cliente.whatsapp}` : ''}
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginTop: 2 }}>
-          {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
-          {cliente.whatsapp ? ` · ${cliente.whatsapp}` : ''}
-        </div>
+        <EstadoBadge estado={cliente.estado} />
       </div>
-      <EstadoBadge estado={cliente.estado} />
-    </div>
+    </Link>
   );
 }
 
-function EstadoBadge({ estado }: { estado: Cliente['estado'] }) {
+export function EstadoBadge({ estado }: { estado: Cliente['estado'] }) {
   const colores: Record<Cliente['estado'], string> = {
     Activo: 'var(--exito)',
     Potencial: 'var(--alerta)',
@@ -157,122 +161,5 @@ function EstadoBadge({ estado }: { estado: Cliente['estado'] }) {
     >
       {estado.toUpperCase()}
     </span>
-  );
-}
-
-function FormularioNuevoCliente({ onCreado }: { onCreado: () => void }) {
-  const [nombre, setNombre] = useState('');
-  const [apellido, setApellido] = useState('');
-  const [dni, setDni] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function enviar(e: React.FormEvent) {
-    e.preventDefault();
-    setEnviando(true);
-    setError(null);
-    try {
-      await api.crearCliente({
-        nombre,
-        apellido,
-        dni: dni || undefined,
-        whatsapp: whatsapp || undefined,
-      });
-      onCreado();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el cliente.');
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  const campo: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    borderRadius: 'var(--radio)',
-    padding: '9px 12px',
-    fontSize: 14,
-    background: 'var(--papel-elevado)',
-  };
-
-  return (
-    <form
-      onSubmit={enviar}
-      style={{
-        border: '1px solid var(--linea)',
-        borderRadius: 'var(--radio)',
-        padding: 20,
-        marginBottom: 24,
-        background: 'var(--papel-elevado)',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 12,
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-cliente-nombre" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Nombre
-        </label>
-        <input
-          id="nuevo-cliente-nombre"
-          style={campo}
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-cliente-apellido" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Apellido
-        </label>
-        <input
-          id="nuevo-cliente-apellido"
-          style={campo}
-          value={apellido}
-          onChange={(e) => setApellido(e.target.value)}
-          required
-        />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-cliente-dni" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          DNI
-        </label>
-        <input id="nuevo-cliente-dni" style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-cliente-whatsapp" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          WhatsApp
-        </label>
-        <input
-          id="nuevo-cliente-whatsapp"
-          style={campo}
-          value={whatsapp}
-          onChange={(e) => setWhatsapp(e.target.value)}
-        />
-      </div>
-
-      {error && (
-        <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>
-      )}
-
-      <div style={{ gridColumn: '1 / -1' }}>
-        <button
-          type="submit"
-          disabled={enviando}
-          style={{
-            background: 'var(--acento)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '9px 18px',
-            fontSize: 14,
-            fontWeight: 600,
-            opacity: enviando ? 0.6 : 1,
-          }}
-        >
-          {enviando ? 'Guardando…' : 'Guardar cliente'}
-        </button>
-      </div>
-    </form>
   );
 }
