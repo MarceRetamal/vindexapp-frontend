@@ -41,4 +41,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ estudio_id: ESTUDIO_ID, ...datos }),
     }),
+
+  darDeBajaExpediente: (id: string, motivo?: string) =>
+    pedido<Expediente>(`/expedientes/${id}/baja?estudio_id=${ESTUDIO_ID}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ motivo }),
+    }),
+
+  reactivarExpediente: (id: string) =>
+    pedido<Expediente>(`/expedientes/${id}/reactivar?estudio_id=${ESTUDIO_ID}`, {
+      method: 'PATCH',
+    }),
 };
