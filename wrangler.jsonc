@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vindex-panel",
+  "compatibility_date": "2026-08-14",
+
+  // Sitio estático (build de Vite). "single-page-application" hace que cualquier
+  // ruta sin archivo coincidente (ej. /clientes, /liquidaciones) sirva index.html,
+  // necesario porque react-router maneja el ruteo del lado del cliente.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

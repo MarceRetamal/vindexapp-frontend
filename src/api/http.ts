@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8787/api';
+const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8787'}/api`;
 
 // Temporal: hasta que el flujo de login determine el estudio activo,
 // se usa el ID del estudio ya dado de alta en las pruebas.
