@@ -5,6 +5,7 @@ const SECCIONES = [
   { ruta: '/expedientes', etiqueta: 'Expedientes' },
   { ruta: '/presupuestos', etiqueta: 'Presupuestos' },
   { ruta: '/agenda', etiqueta: 'Agenda' },
+  { ruta: '/liquidaciones', etiqueta: 'Liquidaciones' },
 ];
 
 export function Layout() {
