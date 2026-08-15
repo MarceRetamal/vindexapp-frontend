@@ -1,8 +1,12 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8787'}/api`;
 
-// Temporal: hasta que el flujo de login determine el estudio activo,
-// se usa el ID del estudio ya dado de alta en las pruebas.
-export const ESTUDIO_ID = 'f5b149e2-810a-4ca4-a606-747c35602cb6';
+// Se completa en el arranque de la app, después de resolver /api/whoami.
+// No debería usarse antes de eso.
+export let ESTUDIO_ID = '';
+
+export function setEstudioId(id: string) {
+  ESTUDIO_ID = id;
+}
 
 export async function pedido<T>(ruta: string, opciones?: RequestInit): Promise<T> {
   const resp = await fetch(`${BASE_URL}${ruta}`, {
