@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "vindex-panel",
+  "name": "vindexapp-frontend",
   "compatibility_date": "2026-08-14",
 
   // Sitio estático (build de Vite). "single-page-application" hace que cualquier

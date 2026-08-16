@@ -42,6 +42,23 @@ export const api = {
       body: JSON.stringify({ estudio_id: ESTUDIO_ID, ...datos }),
     }),
 
+  editarExpediente: (
+    id: string,
+    datos: {
+      caratula?: string;
+      numero?: string;
+      fuero?: string;
+      juzgado?: string;
+      departamento?: string;
+      rol_procesal?: string;
+      notas?: string;
+    }
+  ) =>
+    pedido<Expediente>(`/expedientes/${id}?estudio_id=${ESTUDIO_ID}`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    }),
+
   darDeBajaExpediente: (id: string, motivo?: string) =>
     pedido<Expediente>(`/expedientes/${id}/baja?estudio_id=${ESTUDIO_ID}`, {
       method: 'PATCH',

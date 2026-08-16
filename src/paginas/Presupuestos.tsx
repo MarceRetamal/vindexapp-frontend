@@ -161,6 +161,7 @@ function FilaPresupuesto({
   onCambiado: () => void;
 }) {
   const [mostrarFirma, setMostrarFirma] = useState(false);
+  const [editando, setEditando] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -179,6 +180,21 @@ function FilaPresupuesto({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo actualizar el estado.');
     } finally {
+      setProcesando(false);
+    }
+  }
+
+  async function eliminar() {
+    if (!window.confirm(`¿Eliminar el presupuesto "${presupuesto.concepto}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    setProcesando(true);
+    setError(null);
+    try {
+      await api.eliminarPresupuesto(presupuesto.id);
+      onCambiado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar el presupuesto.');
       setProcesando(false);
     }
   }
@@ -216,6 +232,16 @@ function FilaPresupuesto({
 
         {!esFinal && (
           <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              style={botonAccion}
+              disabled={procesando}
+              onClick={() => {
+                setEditando((v) => !v);
+                setMostrarFirma(false);
+              }}
+            >
+              {editando ? 'Cancelar edición' : 'Editar'}
+            </button>
             {presupuesto.estado !== 'enviado' && (
               <button style={botonAccion} disabled={procesando} onClick={() => transicionar('enviado')}>
                 Enviado
@@ -230,9 +256,19 @@ function FilaPresupuesto({
             <button
               style={{ ...botonAccion, borderColor: 'var(--exito)', color: 'var(--exito)' }}
               disabled={procesando}
-              onClick={() => setMostrarFirma((v) => !v)}
+              onClick={() => {
+                setMostrarFirma((v) => !v);
+                setEditando(false);
+              }}
             >
               {mostrarFirma ? 'Cancelar firma' : 'Firmar'}
+            </button>
+            <button
+              style={{ ...botonAccion, borderColor: 'var(--alerta)', color: 'var(--alerta)' }}
+              disabled={procesando}
+              onClick={eliminar}
+            >
+              Eliminar
             </button>
           </div>
         )}
@@ -242,6 +278,17 @@ function FilaPresupuesto({
 
       {error && (
         <div style={{ color: 'var(--alerta)', fontSize: 12, padding: '0 4px 12px' }}>{error}</div>
+      )}
+
+      {editando && (
+        <FormularioEditarPresupuesto
+          presupuesto={presupuesto}
+          onGuardado={() => {
+            setEditando(false);
+            onCambiado();
+          }}
+          onCancelar={() => setEditando(false)}
+        />
       )}
 
       {mostrarFirma && (
@@ -256,6 +303,148 @@ function FilaPresupuesto({
         />
       )}
     </div>
+  );
+}
+
+function FormularioEditarPresupuesto({
+  presupuesto,
+  onGuardado,
+  onCancelar,
+}: {
+  presupuesto: Presupuesto;
+  onGuardado: () => void;
+  onCancelar: () => void;
+}) {
+  const [concepto, setConcepto] = useState(presupuesto.concepto);
+  const [monto, setMonto] = useState((presupuesto.monto / 100).toFixed(2));
+  const [contactoNombre, setContactoNombre] = useState(presupuesto.contacto_nombre ?? '');
+  const [contactoTelefono, setContactoTelefono] = useState(presupuesto.contacto_telefono ?? '');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const necesitaContacto = !presupuesto.cliente_id;
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    try {
+      const montoNumero = Number(monto.replace(',', '.'));
+      if (!Number.isFinite(montoNumero) || montoNumero <= 0) {
+        throw new Error('El monto debe ser un número mayor a cero.');
+      }
+      await api.editarPresupuesto(presupuesto.id, {
+        concepto,
+        monto: Math.round(montoNumero * 100),
+        contacto_nombre: necesitaContacto ? contactoNombre : undefined,
+        contacto_telefono: necesitaContacto ? contactoTelefono || undefined : undefined,
+      });
+      onGuardado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar los cambios.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const campo: React.CSSProperties = {
+    border: '1px solid var(--linea)',
+    borderRadius: 'var(--radio)',
+    padding: '8px 10px',
+    fontSize: 13,
+    background: 'var(--papel)',
+  };
+
+  return (
+    <form
+      onSubmit={enviar}
+      style={{
+        margin: '0 4px 16px',
+        padding: 16,
+        background: 'var(--acento-suave)',
+        borderRadius: 'var(--radio)',
+        display: 'grid',
+        gridTemplateColumns: necesitaContacto ? '1fr 1fr 1fr' : '2fr 1fr',
+        gap: 10,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor={`editar-${presupuesto.id}-concepto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Concepto
+        </label>
+        <input
+          id={`editar-${presupuesto.id}-concepto`}
+          style={campo}
+          value={concepto}
+          onChange={(e) => setConcepto(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor={`editar-${presupuesto.id}-monto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Monto ($)
+        </label>
+        <input
+          id={`editar-${presupuesto.id}-monto`}
+          style={campo}
+          type="number"
+          min="0"
+          step="0.01"
+          value={monto}
+          onChange={(e) => setMonto(e.target.value)}
+          required
+        />
+      </div>
+
+      {necesitaContacto && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label htmlFor={`editar-${presupuesto.id}-contacto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+            Contacto
+          </label>
+          <input
+            id={`editar-${presupuesto.id}-contacto`}
+            style={campo}
+            value={contactoNombre}
+            onChange={(e) => setContactoNombre(e.target.value)}
+            placeholder="Nombre"
+          />
+          <input
+            style={{ ...campo, marginTop: 6 }}
+            value={contactoTelefono}
+            onChange={(e) => setContactoTelefono(e.target.value)}
+            placeholder="Teléfono"
+          />
+        </div>
+      )}
+
+      {error && <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 12 }}>{error}</div>}
+
+      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
+        <button
+          type="submit"
+          disabled={enviando}
+          style={{
+            background: 'var(--acento)',
+            color: 'var(--papel)',
+            border: 'none',
+            borderRadius: 'var(--radio)',
+            padding: '8px 16px',
+            fontSize: 13,
+            fontWeight: 600,
+            opacity: enviando ? 0.6 : 1,
+          }}
+        >
+          {enviando ? 'Guardando…' : 'Guardar cambios'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancelar}
+          style={{ background: 'transparent', border: 'none', color: 'var(--tinta-suave)', fontSize: 13 }}
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 

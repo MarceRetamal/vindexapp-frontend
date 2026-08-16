@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { api, type Expediente } from '../api/expedientes';
+import { api, type Cliente } from '../api/cliente';
+import { EstadoBadge } from './Clientes';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 
-export function ExpedienteDetalle() {
+export function ClienteDetalle() {
   const { id } = useParams<{ id: string }>();
-  const [expediente, setExpediente] = useState<Expediente | null>(null);
+  const [cliente, setCliente] = useState<Cliente | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,8 +15,8 @@ export function ExpedienteDetalle() {
     setCargando(true);
     setError(null);
     api
-      .obtenerExpediente(id)
-      .then(setExpediente)
+      .obtenerCliente(id)
+      .then(setCliente)
       .catch((e: Error) => setError(e.message))
       .finally(() => setCargando(false));
   }, [id]);
@@ -27,7 +28,7 @@ export function ExpedienteDetalle() {
   if (error) {
     return (
       <div>
-        <VolverAExpedientes />
+        <VolverAClientes />
         <div
           style={{
             marginTop: 16,
@@ -39,53 +40,63 @@ export function ExpedienteDetalle() {
             fontSize: 13,
           }}
         >
-          No se pudo cargar el expediente: {error}
+          No se pudo cargar el cliente: {error}
         </div>
       </div>
     );
   }
 
-  if (!expediente) {
+  if (!cliente) {
     return null;
   }
 
   return (
     <div>
-      <VolverAExpedientes />
+      <VolverAClientes />
 
-      <header style={{ margin: '16px 0 28px' }}>
-        <h1 style={{ fontSize: 24 }}>{expediente.caratula}</h1>
-        <p style={{ color: 'var(--tinta-suave)', margin: '4px 0 0', fontSize: 13 }}>
-          {expediente.cliente_apellido}, {expediente.cliente_nombre}
-        </p>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          margin: '16px 0 28px',
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: 24 }}>
+            {cliente.apellido}, {cliente.nombre}
+          </h1>
+          <p style={{ color: 'var(--tinta-suave)', margin: '4px 0 0', fontSize: 13 }}>
+            {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
+          </p>
+        </div>
+        <EstadoBadge estado={cliente.estado} />
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Dato etiqueta="Estado" valor={expediente.estado} />
-        <Dato etiqueta="Número" valor={expediente.numero} />
-        <Dato etiqueta="Fuero" valor={expediente.fuero} />
-        <Dato etiqueta="Juzgado" valor={expediente.juzgado} />
-        <Dato etiqueta="Departamento judicial" valor={expediente.departamento} />
-        <Dato etiqueta="Rol procesal" valor={expediente.rol_procesal} />
-        <Dato etiqueta="Inicio" valor={expediente.inicio} />
+        <Dato etiqueta="Domicilio" valor={cliente.domicilio} />
+        <Dato etiqueta="Localidad" valor={cliente.localidad} />
+        <Dato etiqueta="Teléfono fijo" valor={cliente.telefono_fijo} />
+        <Dato etiqueta="WhatsApp" valor={cliente.whatsapp} />
+        <Dato etiqueta="Email" valor={cliente.email} />
       </div>
 
-      {expediente.notas && (
+      {cliente.notas && (
         <div style={{ marginTop: 24 }}>
           <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginBottom: 4 }}>Notas</div>
-          <p style={{ fontSize: 14 }}>{expediente.notas}</p>
+          <p style={{ fontSize: 14 }}>{cliente.notas}</p>
         </div>
       )}
 
-      <PanelDocumentos expedienteId={id} />
+      <PanelDocumentos clienteId={id} />
     </div>
   );
 }
 
-function VolverAExpedientes() {
+function VolverAClientes() {
   return (
-    <Link to="/expedientes" style={{ fontSize: 13, color: 'var(--acento)', textDecoration: 'none' }}>
-      ← Volver a expedientes
+    <Link to="/clientes" style={{ fontSize: 13, color: 'var(--acento)', textDecoration: 'none' }}>
+      ← Volver a clientes
     </Link>
   );
 }

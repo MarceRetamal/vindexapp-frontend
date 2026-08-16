@@ -31,6 +31,25 @@ export const api = {
       body: JSON.stringify({ estudio_id: ESTUDIO_ID, ...datos }),
     }),
 
+  editarPresupuesto: (
+    id: string,
+    datos: {
+      concepto?: string;
+      monto?: number; // centavos
+      contacto_nombre?: string;
+      contacto_telefono?: string;
+    }
+  ) =>
+    pedido<Presupuesto>(`/presupuestos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    }),
+
+  eliminarPresupuesto: (id: string) =>
+    pedido<{ id: string; eliminado: boolean }>(`/presupuestos/${id}`, {
+      method: 'DELETE',
+    }),
+
   cambiarEstado: (id: string, estado: 'enviado' | 'rechazado' | 'vencido') =>
     pedido<{ id: string; estado: string }>(`/presupuestos/${id}/estado`, {
       method: 'PATCH',

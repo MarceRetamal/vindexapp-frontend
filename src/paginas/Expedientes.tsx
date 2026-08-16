@@ -99,7 +99,7 @@ export function Expedientes() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {expedientes.map((e, i) => (
-            <FilaExpediente key={e.id} expediente={e} numero={i + 1} />
+            <FilaExpediente key={e.id} expediente={e} numero={i + 1} onCambiado={cargar} />
           ))}
         </div>
       )}
@@ -107,18 +107,62 @@ export function Expedientes() {
   );
 }
 
-function FilaExpediente({ expediente, numero }: { expediente: Expediente; numero: number }) {
+const botonAccion: React.CSSProperties = {
+  border: '1px solid var(--linea)',
+  background: 'var(--papel-elevado)',
+  borderRadius: 'var(--radio)',
+  padding: '5px 10px',
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--tinta)',
+};
+
+function FilaExpediente({
+  expediente,
+  numero,
+  onCambiado,
+}: {
+  expediente: Expediente;
+  numero: number;
+  onCambiado: () => void;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [procesando, setProcesando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const estaDeBaja = expediente.estado === 'Archivado';
+
+  async function darDeBaja() {
+    const motivo = window.prompt('Motivo de la baja (opcional):');
+    if (motivo === null) return; // canceló el prompt
+    setProcesando(true);
+    setError(null);
+    try {
+      await api.darDeBajaExpediente(expediente.id, motivo || undefined);
+      onCambiado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo dar de baja el expediente.');
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  async function reactivar() {
+    setProcesando(true);
+    setError(null);
+    try {
+      await api.reactivarExpediente(expediente.id);
+      onCambiado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo reactivar el expediente.');
+    } finally {
+      setProcesando(false);
+    }
+  }
+
   return (
-    <Link to={`/expedientes/${expediente.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          padding: '14px 4px',
-          borderBottom: '1px solid var(--linea)',
-        }}
-      >
+    <div style={{ borderBottom: '1px solid var(--linea)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 4px' }}>
         <span
           style={{
             fontFamily: 'var(--fuente-dato)',
@@ -130,14 +174,42 @@ function FilaExpediente({ expediente, numero }: { expediente: Expediente; numero
           {String(numero).padStart(2, '0')}
         </span>
         <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--acento)', opacity: 0.4 }} />
-        <div style={{ flex: 1 }}>
+
+        <Link
+          to={`/expedientes/${expediente.id}`}
+          style={{ flex: 1, textDecoration: 'none', color: 'inherit', minWidth: 0 }}
+        >
           <div style={{ fontWeight: 600, fontSize: 14 }}>{expediente.caratula}</div>
           <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginTop: 2 }}>
             {expediente.cliente_apellido}, {expediente.cliente_nombre}
             {expediente.numero ? ` · Nº ${expediente.numero}` : ''}
             {expediente.fuero ? ` · ${expediente.fuero}` : ''}
           </div>
+        </Link>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button style={botonAccion} disabled={procesando} onClick={() => setEditando((v) => !v)}>
+            {editando ? 'Cancelar' : 'Editar'}
+          </button>
+          {estaDeBaja ? (
+            <button
+              style={{ ...botonAccion, borderColor: 'var(--exito)', color: 'var(--exito)' }}
+              disabled={procesando}
+              onClick={reactivar}
+            >
+              Reactivar
+            </button>
+          ) : (
+            <button
+              style={{ ...botonAccion, borderColor: 'var(--alerta)', color: 'var(--alerta)' }}
+              disabled={procesando}
+              onClick={darDeBaja}
+            >
+              Dar de baja
+            </button>
+          )}
         </div>
+
         <span
           style={{
             fontSize: 11,
@@ -153,7 +225,138 @@ function FilaExpediente({ expediente, numero }: { expediente: Expediente; numero
           {expediente.estado.toUpperCase()}
         </span>
       </div>
-    </Link>
+
+      {error && <div style={{ color: 'var(--alerta)', fontSize: 12, padding: '0 4px 12px' }}>{error}</div>}
+
+      {editando && (
+        <FormularioEditarExpediente
+          expediente={expediente}
+          onGuardado={() => {
+            setEditando(false);
+            onCambiado();
+          }}
+          onCancelar={() => setEditando(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function FormularioEditarExpediente({
+  expediente,
+  onGuardado,
+  onCancelar,
+}: {
+  expediente: Expediente;
+  onGuardado: () => void;
+  onCancelar: () => void;
+}) {
+  const [caratula, setCaratula] = useState(expediente.caratula);
+  const [numero, setNumero] = useState(expediente.numero ?? '');
+  const [fuero, setFuero] = useState(expediente.fuero ?? '');
+  const [juzgado, setJuzgado] = useState(expediente.juzgado ?? '');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    try {
+      await api.editarExpediente(expediente.id, {
+        caratula,
+        numero: numero || undefined,
+        fuero: fuero || undefined,
+        juzgado: juzgado || undefined,
+      });
+      onGuardado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo guardar los cambios.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const campo: React.CSSProperties = {
+    border: '1px solid var(--linea)',
+    borderRadius: 'var(--radio)',
+    padding: '8px 10px',
+    fontSize: 13,
+    background: 'var(--papel)',
+  };
+
+  return (
+    <form
+      onSubmit={enviar}
+      style={{
+        margin: '0 4px 16px',
+        padding: 16,
+        background: 'var(--acento-suave)',
+        borderRadius: 'var(--radio)',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 10,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor={`editar-${expediente.id}-caratula`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Carátula
+        </label>
+        <input
+          id={`editar-${expediente.id}-caratula`}
+          style={campo}
+          value={caratula}
+          onChange={(e) => setCaratula(e.target.value)}
+          required
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor={`editar-${expediente.id}-numero`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Número
+        </label>
+        <input id={`editar-${expediente.id}-numero`} style={campo} value={numero} onChange={(e) => setNumero(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label htmlFor={`editar-${expediente.id}-fuero`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Fuero
+        </label>
+        <input id={`editar-${expediente.id}-fuero`} style={campo} value={fuero} onChange={(e) => setFuero(e.target.value)} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
+        <label htmlFor={`editar-${expediente.id}-juzgado`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+          Juzgado
+        </label>
+        <input id={`editar-${expediente.id}-juzgado`} style={campo} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
+      </div>
+
+      {error && <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>}
+
+      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
+        <button
+          type="submit"
+          disabled={enviando}
+          style={{
+            background: 'var(--acento)',
+            color: 'var(--papel)',
+            border: 'none',
+            borderRadius: 'var(--radio)',
+            padding: '8px 16px',
+            fontSize: 13,
+            fontWeight: 600,
+            opacity: enviando ? 0.6 : 1,
+          }}
+        >
+          {enviando ? 'Guardando…' : 'Guardar cambios'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancelar}
+          style={{ background: 'transparent', border: 'none', color: 'var(--tinta-suave)', fontSize: 13 }}
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 
