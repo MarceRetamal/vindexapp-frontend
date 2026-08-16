@@ -1,4 +1,7 @@
-import { NavLink, Outlet } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
+import { NavLink, Outlet, useLocation } from 'react-router';
+
+import logo from '@/assets/vindex-isologo.png';
 
 const SECCIONES = [
   { ruta: '/clientes', etiqueta: 'Clientes' },
@@ -9,56 +12,54 @@ const SECCIONES = [
 ];
 
 export function Layout() {
+  const location = useLocation();
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside
-        style={{
-          width: 220,
-          borderRight: '1px solid var(--linea)',
-          padding: '28px 20px',
-          background: 'var(--papel-elevado)',
-        }}
-      >
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ fontFamily: 'var(--fuente-titulo)', fontSize: 20, fontWeight: 600 }}>
-            VINDEX <span style={{ color: 'var(--acento)' }}>LEGAL</span>
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--fuente-dato)',
-              fontSize: 11,
-              color: 'var(--tinta-suave)',
-              marginTop: 2,
-              letterSpacing: '0.04em',
-            }}
-          >
-            GESTIÓN INTERNA
-          </div>
+    <div className="flex min-h-screen bg-structural-black">
+      <aside className="w-[220px] shrink-0 border-r border-line bg-graphite">
+        <div className="px-6 py-8">
+          <img src={logo} alt="VINDEX LEGAL" className="w-full max-w-[176px]" />
+          <p className="mt-3 font-mono text-[10px] tracking-[0.2em] text-text-gray-light uppercase">
+            Gestión interna
+          </p>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <nav className="flex flex-col gap-0.5">
           {SECCIONES.map((s) => (
             <NavLink
               key={s.ruta}
               to={s.ruta}
-              style={({ isActive }) => ({
-                padding: '9px 12px',
-                borderRadius: 'var(--radio)',
-                textDecoration: 'none',
-                color: isActive ? 'var(--acento)' : 'var(--tinta)',
-                background: isActive ? 'var(--acento-suave)' : 'transparent',
-                fontWeight: isActive ? 600 : 500,
-                fontSize: 14,
-              })}
+              className={({ isActive }) =>
+                `relative flex items-center px-6 py-3 text-sm transition-colors ${
+                  isActive ? 'text-white font-bold' : 'text-text-gray-light hover:text-white'
+                }`
+              }
             >
-              {s.etiqueta}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-silver via-silver-deep to-silver" />
+                  )}
+                  {s.etiqueta}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
       </aside>
 
-      <main style={{ flex: 1, padding: '32px 40px', maxWidth: 1100 }}>
-        <Outlet />
+      <main className="flex-1 max-w-[1100px] px-10 py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );
