@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { api as apiExpedientes, type Expediente } from '../api/expedientes';
 import { api as apiActuaciones, type Actuacion } from '../api/actuaciones';
+import { api as apiTareas, type Tarea } from '../api/tareas';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { EmptyState } from '../componentes/EmptyState';
@@ -41,6 +42,11 @@ export function ExpedienteDetalle() {
   const [errorActuaciones, setErrorActuaciones] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [cargandoTareas, setCargandoTareas] = useState(true);
+  const [errorTareas, setErrorTareas] = useState<string | null>(null);
+  const [mostrarFormularioTarea, setMostrarFormularioTarea] = useState(false);
+
   function cargarExpediente() {
     if (!id) return;
     setCargando(true);
@@ -63,14 +69,41 @@ export function ExpedienteDetalle() {
       .finally(() => setCargandoActuaciones(false));
   }
 
+  function cargarTareas() {
+    if (!id) return;
+    setCargandoTareas(true);
+    setErrorTareas(null);
+    apiTareas
+      .listarTareas(id)
+      .then(setTareas)
+      .catch((e: Error) => setErrorTareas(e.message))
+      .finally(() => setCargandoTareas(false));
+  }
+
   useEffect(cargarExpediente, [id]);
   useEffect(cargarActuaciones, [id]);
+  useEffect(cargarTareas, [id]);
 
   async function notificar(actuacionId: string) {
     await apiActuaciones.notificarActuacion(actuacionId);
     setActuaciones((actuales) =>
       actuales.map((a) => (a.id === actuacionId ? { ...a, notificado: 1, visible: 1 } : a))
     );
+  }
+
+  async function completarTarea(tareaId: string) {
+    const anteriores = tareas;
+    setTareas((actuales) =>
+      actuales.map((t) =>
+        t.id === tareaId ? { ...t, estado: 'Completada', completado_en: Date.now() } : t
+      )
+    );
+    try {
+      await apiTareas.cambiarEstadoTarea(tareaId, 'Completada');
+    } catch (e) {
+      setTareas(anteriores);
+      setErrorTareas(e instanceof Error ? e.message : 'No se pudo actualizar la tarea.');
+    }
   }
 
   if (cargando) {
@@ -149,6 +182,34 @@ export function ExpedienteDetalle() {
               ))}
             </motion.div>
           )}
+
+          <div className="flex items-center justify-between mb-3 mt-8">
+            <h2 className="text-lg font-bold text-white">Tareas</h2>
+            <Button
+              onClick={() => setMostrarFormularioTarea(true)}
+              className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
+            >
+              + Nueva tarea
+            </Button>
+          </div>
+
+          {errorTareas && <ErrorBanner message={`No se pudieron cargar las tareas: ${errorTareas}`} />}
+
+          {cargandoTareas ? (
+            <ListSkeleton rows={3} />
+          ) : tareas.length === 0 ? (
+            <EmptyState message='Todavía no hay tareas cargadas. Usá "Nueva tarea" para crear la primera.' />
+          ) : (
+            <motion.div
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+            >
+              {tareas.map((tarea) => (
+                <FilaTarea key={tarea.id} tarea={tarea} onCompletar={completarTarea} />
+              ))}
+            </motion.div>
+          )}
         </div>
 
         <div className="flex flex-col gap-6">
@@ -183,6 +244,16 @@ export function ExpedienteDetalle() {
           cargarActuaciones();
         }}
       />
+
+      <FormularioNuevaTarea
+        abierto={mostrarFormularioTarea}
+        expedienteId={id!}
+        onCerrar={() => setMostrarFormularioTarea(false)}
+        onGuardado={() => {
+          setMostrarFormularioTarea(false);
+          cargarTareas();
+        }}
+      />
     </div>
   );
 }
@@ -214,6 +285,8 @@ function FilaActuacion({
   const [abierta, setAbierta] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const esHito = actuacion.hito === 1;
+  const vencida =
+    actuacion.vencimiento != null && new Date(actuacion.vencimiento).getTime() < Date.now();
 
   async function notificar(e: React.MouseEvent) {
     e.stopPropagation();
@@ -249,6 +322,16 @@ function FilaActuacion({
                 Notificado
               </Badge>
             )}
+            {actuacion.vencimiento &&
+              (vencida && actuacion.notificado !== 1 ? (
+                <Badge className="rounded-sharp uppercase text-xs bg-warning text-structural-black border-warning">
+                  Vencida: {formateadorFecha.format(new Date(actuacion.vencimiento))}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="rounded-sharp uppercase text-xs border-warning text-warning">
+                  Vence: {formateadorFecha.format(new Date(actuacion.vencimiento))}
+                </Badge>
+              ))}
           </div>
           <span className="text-xs text-text-gray-light font-mono">
             {formateadorFecha.format(new Date(actuacion.fecha))}
@@ -316,6 +399,7 @@ function FormularioNuevaActuacion({
 }) {
   const [tipo, setTipo] = useState('');
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [vencimiento, setVencimiento] = useState('');
   const [detalleInterno, setDetalleInterno] = useState('');
   const [textoCliente, setTextoCliente] = useState('');
   const [hito, setHito] = useState(false);
@@ -326,6 +410,7 @@ function FormularioNuevaActuacion({
   function limpiar() {
     setTipo('');
     setFecha(new Date().toISOString().slice(0, 10));
+    setVencimiento('');
     setDetalleInterno('');
     setTextoCliente('');
     setHito(false);
@@ -342,6 +427,7 @@ function FormularioNuevaActuacion({
         expediente_id: expedienteId,
         tipo,
         fecha,
+        vencimiento: vencimiento || undefined,
         detalle_interno: detalleInterno || undefined,
         texto_cliente: textoCliente || undefined,
         hito,
@@ -377,6 +463,19 @@ function FormularioNuevaActuacion({
             <Input id="act-fecha" type="date" className={campoClases} value={fecha} onChange={(e) => setFecha(e.target.value)} required />
           </div>
           <div className="flex flex-col gap-1">
+            <label htmlFor="act-vencimiento" className={etiquetaClases}>Vencimiento</label>
+            <Input
+              id="act-vencimiento"
+              type="date"
+              className={campoClases}
+              value={vencimiento}
+              onChange={(e) => setVencimiento(e.target.value)}
+            />
+            <p className="text-xs text-text-gray-light">
+              Fecha límite para actuar (la cargás vos; el sistema no la calcula).
+            </p>
+          </div>
+          <div className="flex flex-col gap-1">
             <label htmlFor="act-detalle" className={etiquetaClases}>Detalle interno</label>
             <Textarea id="act-detalle" className={`${campoClases} resize-y min-h-[60px]`} value={detalleInterno} onChange={(e) => setDetalleInterno(e.target.value)} />
           </div>
@@ -404,6 +503,181 @@ function FormularioNuevaActuacion({
               className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
             >
               {enviando ? 'Guardando…' : 'Guardar actuación'}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onCerrar}
+              disabled={enviando}
+              className="rounded-sharp border border-line text-text-gray-light hover:text-white"
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FilaTarea({
+  tarea,
+  onCompletar,
+}: {
+  tarea: Tarea;
+  onCompletar: (id: string) => Promise<void>;
+}) {
+  const [completando, setCompletando] = useState(false);
+  const completada = tarea.estado === 'Completada';
+  const vencida =
+    !completada && tarea.fecha_limite != null && new Date(tarea.fecha_limite).getTime() < Date.now();
+
+  async function completar() {
+    setCompletando(true);
+    try {
+      await onCompletar(tarea.id);
+    } finally {
+      setCompletando(false);
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="flex items-center gap-3 border-b border-line py-3"
+    >
+      <input
+        type="checkbox"
+        checked={completada}
+        disabled={completada || completando}
+        onChange={completar}
+        className="accent-silver shrink-0 w-4 h-4 cursor-pointer disabled:cursor-default"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`font-medium ${completada ? 'text-text-gray-light line-through' : 'text-white'}`}>
+            {tarea.titulo}
+          </span>
+          <Badge
+            variant="outline"
+            className={`rounded-sharp uppercase text-xs ${
+              completada
+                ? 'border-success text-success'
+                : vencida
+                  ? 'border-warning text-warning'
+                  : 'border-line text-text-gray-light'
+            }`}
+          >
+            {tarea.estado}
+          </Badge>
+        </div>
+        {tarea.fecha_limite && (
+          <span className={`text-xs font-mono ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
+            Vence: {formateadorFecha.format(new Date(tarea.fecha_limite))}
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function FormularioNuevaTarea({
+  abierto,
+  expedienteId,
+  onCerrar,
+  onGuardado,
+}: {
+  abierto: boolean;
+  expedienteId: string;
+  onCerrar: () => void;
+  onGuardado: () => void;
+}) {
+  const [titulo, setTitulo] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [fechaLimite, setFechaLimite] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function limpiar() {
+    setTitulo('');
+    setDescripcion('');
+    setFechaLimite('');
+    setError(null);
+  }
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setError(null);
+    try {
+      await apiTareas.crearTarea({
+        expediente_id: expedienteId,
+        titulo,
+        descripcion: descripcion || undefined,
+        fecha_limite: fechaLimite || undefined,
+      });
+      limpiar();
+      onGuardado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar la tarea.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={abierto}
+      onOpenChange={(open) => {
+        if (!open) onCerrar();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nueva tarea</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={enviar} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tarea-titulo" className={etiquetaClases}>Título</label>
+            <Input
+              id="tarea-titulo"
+              className={campoClases}
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tarea-descripcion" className={etiquetaClases}>Descripción</label>
+            <Textarea
+              id="tarea-descripcion"
+              className={`${campoClases} resize-y min-h-[60px]`}
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tarea-fecha-limite" className={etiquetaClases}>Fecha límite</label>
+            <Input
+              id="tarea-fecha-limite"
+              type="date"
+              className={campoClases}
+              value={fechaLimite}
+              onChange={(e) => setFechaLimite(e.target.value)}
+            />
+          </div>
+
+          {error && <ErrorBanner message={error} />}
+
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={enviando}
+              className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
+            >
+              {enviando ? 'Guardando…' : 'Guardar tarea'}
             </Button>
             <Button
               type="button"

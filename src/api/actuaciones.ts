@@ -11,8 +11,15 @@ export interface Actuacion {
   visible: number;
   hito: number;
   notificado: number;
+  vencimiento: string | null;
   creado_por: string | null;
   creado_en: number;
+}
+
+export interface ActuacionConVencimiento extends Actuacion {
+  expediente_caratula: string;
+  cliente_apellido: string;
+  cliente_nombre: string;
 }
 
 export const api = {
@@ -27,6 +34,7 @@ export const api = {
     texto_cliente?: string;
     visible?: boolean;
     hito?: boolean;
+    vencimiento?: string;
   }) =>
     pedido<{ id: string; tipo: string; fecha: string }>('/actuaciones', {
       method: 'POST',
@@ -37,4 +45,9 @@ export const api = {
     pedido<{ id: string; notificado: boolean }>(`/actuaciones/${id}/notificar`, {
       method: 'PATCH',
     }),
+
+  listarVencimientosProximos: (dias?: number) =>
+    pedido<ActuacionConVencimiento[]>(
+      `/actuaciones/vencimientos-proximos?estudio_id=${ESTUDIO_ID}${dias ? `&dias=${dias}` : ''}`
+    ),
 };

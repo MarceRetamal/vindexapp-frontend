@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation } from 'react-router';
 import logo from '@/assets/vindex-isologo.png';
 
 const SECCIONES = [
+  { ruta: '/', etiqueta: 'Inicio' },
   { ruta: '/clientes', etiqueta: 'Clientes' },
   { ruta: '/expedientes', etiqueta: 'Expedientes' },
   { ruta: '/presupuestos', etiqueta: 'Presupuestos' },
@@ -30,6 +31,7 @@ export function Layout() {
             <NavLink
               key={s.ruta}
               to={s.ruta}
+              end={s.ruta === '/'}
               className={({ isActive }) =>
                 `relative flex items-center px-6 py-3 text-sm transition-colors ${
                   isActive ? 'text-white font-bold' : 'text-text-gray-light hover:text-white'

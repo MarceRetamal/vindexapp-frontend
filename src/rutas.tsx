@@ -1,5 +1,6 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter } from 'react-router';
 import { Layout } from './componentes/Layout';
+import { Dashboard } from './paginas/Dashboard';
 import { Clientes } from './paginas/Clientes';
 import { ClienteDetalle } from './paginas/ClienteDetalle';
 import { Expedientes } from './paginas/Expedientes';
@@ -13,7 +14,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <Navigate to="/clientes" replace /> },
+      { index: true, element: <Dashboard /> },
       { path: 'clientes', element: <Clientes /> },
       { path: 'clientes/:id', element: <ClienteDetalle /> },
       { path: 'expedientes', element: <Expedientes /> },
