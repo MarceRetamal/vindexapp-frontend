@@ -3,6 +3,9 @@ import { Link, useParams } from 'react-router';
 import { api, type Cliente } from '../api/cliente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
+import { EmptyState } from '../componentes/EmptyState';
+import { ErrorBanner } from '../componentes/ErrorBanner';
+import { ListSkeleton } from '../componentes/ListSkeleton';
 
 export function ClienteDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -22,25 +25,22 @@ export function ClienteDetalle() {
   }, [id]);
 
   if (cargando) {
-    return <p style={{ color: 'var(--tinta-suave)' }}>Cargando…</p>;
+    return (
+      <div>
+        <VolverAClientes />
+        <div className="mt-4">
+          <ListSkeleton rows={3} />
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div>
         <VolverAClientes />
-        <div
-          style={{
-            marginTop: 16,
-            background: '#fdf1ef',
-            border: '1px solid var(--alerta)',
-            color: 'var(--alerta)',
-            padding: '12px 16px',
-            borderRadius: 'var(--radio)',
-            fontSize: 13,
-          }}
-        >
-          No se pudo cargar el cliente: {error}
+        <div className="mt-4">
+          <ErrorBanner message={`No se pudo cargar el cliente: ${error}`} />
         </div>
       </div>
     );
@@ -50,23 +50,23 @@ export function ClienteDetalle() {
     return null;
   }
 
+  const sinDatos =
+    !cliente.domicilio &&
+    !cliente.localidad &&
+    !cliente.telefono_fijo &&
+    !cliente.whatsapp &&
+    !cliente.email;
+
   return (
     <div>
       <VolverAClientes />
 
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          margin: '16px 0 28px',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: 24 }}>
+      <header className="flex items-start justify-between gap-4 mt-4 mb-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black uppercase tracking-wide text-white break-words">
             {cliente.apellido}, {cliente.nombre}
           </h1>
-          <p style={{ color: 'var(--tinta-suave)', margin: '4px 0 0', fontSize: 13 }}>
+          <p className="text-sm text-text-gray-light mt-1">
             {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
           </p>
         </div>
@@ -76,29 +76,41 @@ export function ClienteDetalle() {
         />
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Dato etiqueta="Domicilio" valor={cliente.domicilio} />
-        <Dato etiqueta="Localidad" valor={cliente.localidad} />
-        <Dato etiqueta="Teléfono fijo" valor={cliente.telefono_fijo} />
-        <Dato etiqueta="WhatsApp" valor={cliente.whatsapp} />
-        <Dato etiqueta="Email" valor={cliente.email} />
-      </div>
-
-      {cliente.notas && (
-        <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginBottom: 4 }}>Notas</div>
-          <p style={{ fontSize: 14 }}>{cliente.notas}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <section className="border border-line rounded-sharp bg-graphite p-4">
+            <h2 className="text-sm font-bold text-white mb-3 uppercase tracking-wide">Datos de contacto</h2>
+            {sinDatos ? (
+              <EmptyState message="Todavía no se cargaron datos de contacto para este cliente." />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Dato etiqueta="Domicilio" valor={cliente.domicilio} />
+                <Dato etiqueta="Localidad" valor={cliente.localidad} />
+                <Dato etiqueta="Teléfono fijo" valor={cliente.telefono_fijo} />
+                <Dato etiqueta="WhatsApp" valor={cliente.whatsapp} />
+                <Dato etiqueta="Email" valor={cliente.email} />
+              </div>
+            )}
+            {cliente.notas && (
+              <div className="mt-4 pt-3 border-t border-line">
+                <div className="text-xs text-text-gray-light mb-1">Notas</div>
+                <p className="text-sm text-white whitespace-pre-wrap">{cliente.notas}</p>
+              </div>
+            )}
+          </section>
         </div>
-      )}
 
-      <PanelDocumentos clienteId={id} />
+        <div className="flex flex-col gap-6">
+          <PanelDocumentos clienteId={id} />
+        </div>
+      </div>
     </div>
   );
 }
 
 function VolverAClientes() {
   return (
-    <Link to="/clientes" style={{ fontSize: 13, color: 'var(--acento)', textDecoration: 'none' }}>
+    <Link to="/clientes" className="text-sm text-silver hover:brightness-125 no-underline">
       ← Volver a clientes
     </Link>
   );
@@ -107,8 +119,8 @@ function VolverAClientes() {
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
   return (
     <div>
-      <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginBottom: 2 }}>{etiqueta}</div>
-      <div style={{ fontSize: 14, fontWeight: 500 }}>{valor ?? '—'}</div>
+      <div className="text-xs text-text-gray-light mb-0.5">{etiqueta}</div>
+      <div className="text-sm font-medium text-white">{valor ?? '—'}</div>
     </div>
   );
 }

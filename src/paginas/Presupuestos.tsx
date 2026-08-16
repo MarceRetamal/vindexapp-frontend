@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { api, type Presupuesto } from '../api/presupuestos';
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
+import { PageHeader } from '../componentes/PageHeader';
+import { Row } from '../componentes/Row';
+import { EmptyState } from '../componentes/EmptyState';
+import { ErrorBanner } from '../componentes/ErrorBanner';
+import { ListSkeleton } from '../componentes/ListSkeleton';
+import { EstadoBadge } from '../componentes/EstadoBadge';
+import { Button } from '@/componentes/ui/button';
+import { Input } from '@/componentes/ui/input';
 
 const FORMATO_MONTO = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+
+const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
+const etiquetaClases = 'text-xs text-text-gray-light';
 
 export function Presupuestos() {
   const [presupuestos, setPresupuestos] = useState<Presupuesto[]>([]);
@@ -32,35 +44,12 @@ export function Presupuestos() {
 
   return (
     <div>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          marginBottom: 28,
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: 26 }}>Presupuestos</h1>
-          <p style={{ color: 'var(--tinta-suave)', margin: '4px 0 0', fontSize: 13 }}>
-            {presupuestos.length} {presupuestos.length === 1 ? 'presupuesto' : 'presupuestos'}
-          </p>
-        </div>
-        <button
-          onClick={() => setMostrarFormulario((v) => !v)}
-          style={{
-            background: 'var(--tinta)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '9px 16px',
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          {mostrarFormulario ? 'Cancelar' : '+ Nuevo presupuesto'}
-        </button>
-      </header>
+      <PageHeader
+        title="Presupuestos"
+        count={presupuestos.length}
+        ctaLabel={mostrarFormulario ? 'Cancelar' : '+ Nuevo presupuesto'}
+        onCta={() => setMostrarFormulario((v) => !v)}
+      />
 
       {mostrarFormulario && (
         <FormularioNuevoPresupuesto
@@ -72,90 +61,43 @@ export function Presupuestos() {
         />
       )}
 
-      {error && (
-        <div
-          style={{
-            background: '#fdf1ef',
-            border: '1px solid var(--alerta)',
-            color: 'var(--alerta)',
-            padding: '12px 16px',
-            borderRadius: 'var(--radio)',
-            fontSize: 13,
-            marginBottom: 20,
-          }}
-        >
-          No se pudo cargar el listado: {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={`No se pudo cargar el listado: ${error}`} />}
 
       {cargando ? (
-        <p style={{ color: 'var(--tinta-suave)' }}>Cargando…</p>
+        <ListSkeleton rows={6} />
       ) : presupuestos.length === 0 ? (
-        <div
-          style={{
-            border: '1px dashed var(--linea)',
-            borderRadius: 'var(--radio)',
-            padding: '40px 20px',
-            textAlign: 'center',
-            color: 'var(--tinta-suave)',
-          }}
-        >
-          Todavía no hay presupuestos cargados. Usá "Nuevo presupuesto" para agregar el primero.
-        </div>
+        <EmptyState message='Todavía no hay presupuestos cargados. Usá "Nuevo presupuesto" para agregar el primero.' />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+        >
           {presupuestos.map((p, i) => (
             <FilaPresupuesto
               key={p.id}
               presupuesto={p}
-              numero={i + 1}
+              index={i + 1}
               cliente={p.cliente_id ? clientesPorId.get(p.cliente_id) : undefined}
               expedientes={expedientes}
               onCambiado={cargar}
             />
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );
 }
 
-const COLORES_ESTADO: Record<Presupuesto['estado'], string> = {
-  borrador: 'var(--tinta-suave)',
-  enviado: 'var(--alerta)',
-  firmado: 'var(--exito)',
-  rechazado: 'var(--acento)',
-  vencido: 'var(--tinta-suave)',
-};
-
-function EstadoBadge({ estado }: { estado: Presupuesto['estado'] }) {
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        color: COLORES_ESTADO[estado],
-        border: `1px solid ${COLORES_ESTADO[estado]}`,
-        borderRadius: 'var(--radio)',
-        padding: '3px 8px',
-        letterSpacing: '0.02em',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {estado.toUpperCase()}
-    </span>
-  );
-}
-
 function FilaPresupuesto({
   presupuesto,
-  numero,
+  index,
   cliente,
   expedientes,
   onCambiado,
 }: {
   presupuesto: Presupuesto;
-  numero: number;
+  index: number;
   cliente?: Cliente;
   expedientes: Expediente[];
   onCambiado: () => void;
@@ -199,86 +141,115 @@ function FilaPresupuesto({
     }
   }
 
-  const botonAccion: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    background: 'var(--papel-elevado)',
-    borderRadius: 'var(--radio)',
-    padding: '5px 10px',
-    fontSize: 12,
-    fontWeight: 600,
-    color: 'var(--tinta)',
-  };
-
   return (
-    <div style={{ borderBottom: '1px solid var(--linea)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 4px' }}>
-        <span
-          style={{
-            fontFamily: 'var(--fuente-dato)',
-            fontSize: 12,
-            color: 'var(--tinta-suave)',
-            width: 28,
-          }}
-        >
-          {String(numero).padStart(2, '0')}
-        </span>
-        <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--acento)', opacity: 0.4 }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{presupuesto.concepto}</div>
-          <div style={{ fontSize: 12, color: 'var(--tinta-suave)', marginTop: 2 }}>
-            {nombreParte} · {FORMATO_MONTO.format(presupuesto.monto / 100)}
-          </div>
-        </div>
-
-        {!esFinal && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              style={botonAccion}
-              disabled={procesando}
-              onClick={() => {
-                setEditando((v) => !v);
-                setMostrarFirma(false);
-              }}
-            >
-              {editando ? 'Cancelar edición' : 'Editar'}
-            </button>
-            {presupuesto.estado !== 'enviado' && (
-              <button style={botonAccion} disabled={procesando} onClick={() => transicionar('enviado')}>
-                Enviado
-              </button>
+    <div>
+      <Row
+        index={index}
+        to="/presupuestos"
+        actions={
+          <>
+            {!esFinal && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setEditando((v) => !v);
+                    setMostrarFirma(false);
+                  }}
+                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
+                >
+                  {editando ? 'Cancelar edición' : 'Editar'}
+                </Button>
+                {presupuesto.estado !== 'enviado' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={procesando}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      transicionar('enviado');
+                    }}
+                    className="rounded-sharp border border-line text-text-gray-light hover:text-white"
+                  >
+                    Enviado
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    transicionar('rechazado');
+                  }}
+                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
+                >
+                  Rechazar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    transicionar('vencido');
+                  }}
+                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
+                >
+                  Vencido
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMostrarFirma((v) => !v);
+                    setEditando(false);
+                  }}
+                  className="rounded-sharp border border-success text-success hover:brightness-125"
+                >
+                  {mostrarFirma ? 'Cancelar firma' : 'Firmar'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    eliminar();
+                  }}
+                  className="rounded-sharp border border-warning text-warning hover:brightness-125"
+                >
+                  Eliminar
+                </Button>
+              </>
             )}
-            <button style={botonAccion} disabled={procesando} onClick={() => transicionar('rechazado')}>
-              Rechazar
-            </button>
-            <button style={botonAccion} disabled={procesando} onClick={() => transicionar('vencido')}>
-              Vencido
-            </button>
-            <button
-              style={{ ...botonAccion, borderColor: 'var(--exito)', color: 'var(--exito)' }}
-              disabled={procesando}
-              onClick={() => {
-                setMostrarFirma((v) => !v);
-                setEditando(false);
+            <EstadoBadge
+              estado={presupuesto.estado}
+              colorMap={{
+                borrador: 'neutral',
+                enviado: 'warning',
+                firmado: 'success',
+                rechazado: 'warning',
+                vencido: 'neutral',
               }}
-            >
-              {mostrarFirma ? 'Cancelar firma' : 'Firmar'}
-            </button>
-            <button
-              style={{ ...botonAccion, borderColor: 'var(--alerta)', color: 'var(--alerta)' }}
-              disabled={procesando}
-              onClick={eliminar}
-            >
-              Eliminar
-            </button>
-          </div>
-        )}
+            />
+          </>
+        }
+      >
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="font-bold text-white truncate">{presupuesto.concepto}</span>
+          <span className="text-xs text-text-gray-light font-mono truncate">
+            {nombreParte} · {FORMATO_MONTO.format(presupuesto.monto / 100)}
+          </span>
+        </div>
+      </Row>
 
-        <EstadoBadge estado={presupuesto.estado} />
-      </div>
-
-      {error && (
-        <div style={{ color: 'var(--alerta)', fontSize: 12, padding: '0 4px 12px' }}>{error}</div>
-      )}
+      {error && <div className="text-warning text-xs pb-3">{error}</div>}
 
       {editando && (
         <FormularioEditarPresupuesto
@@ -347,102 +318,49 @@ function FormularioEditarPresupuesto({
     }
   }
 
-  const campo: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    borderRadius: 'var(--radio)',
-    padding: '8px 10px',
-    fontSize: 13,
-    background: 'var(--papel)',
-  };
-
   return (
     <form
       onSubmit={enviar}
-      style={{
-        margin: '0 4px 16px',
-        padding: 16,
-        background: 'var(--acento-suave)',
-        borderRadius: 'var(--radio)',
-        display: 'grid',
-        gridTemplateColumns: necesitaContacto ? '1fr 1fr 1fr' : '2fr 1fr',
-        gap: 10,
-      }}
+      className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
+        necesitaContacto ? 'grid-cols-3' : 'grid-cols-2'
+      }`}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor={`editar-${presupuesto.id}-concepto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Concepto
-        </label>
-        <input
-          id={`editar-${presupuesto.id}-concepto`}
-          style={campo}
-          value={concepto}
-          onChange={(e) => setConcepto(e.target.value)}
-          required
-        />
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`editar-${presupuesto.id}-concepto`} className={etiquetaClases}>Concepto</label>
+        <Input id={`editar-${presupuesto.id}-concepto`} className={campoClases} value={concepto} onChange={(e) => setConcepto(e.target.value)} required />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor={`editar-${presupuesto.id}-monto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Monto ($)
-        </label>
-        <input
-          id={`editar-${presupuesto.id}-monto`}
-          style={campo}
-          type="number"
-          min="0"
-          step="0.01"
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          required
-        />
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`editar-${presupuesto.id}-monto`} className={etiquetaClases}>Monto ($)</label>
+        <Input id={`editar-${presupuesto.id}-monto`} type="number" min="0" step="0.01" className={campoClases} value={monto} onChange={(e) => setMonto(e.target.value)} required />
       </div>
 
       {necesitaContacto && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor={`editar-${presupuesto.id}-contacto`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-            Contacto
-          </label>
-          <input
-            id={`editar-${presupuesto.id}-contacto`}
-            style={campo}
-            value={contactoNombre}
-            onChange={(e) => setContactoNombre(e.target.value)}
-            placeholder="Nombre"
-          />
-          <input
-            style={{ ...campo, marginTop: 6 }}
-            value={contactoTelefono}
-            onChange={(e) => setContactoTelefono(e.target.value)}
-            placeholder="Teléfono"
-          />
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`editar-${presupuesto.id}-contacto`} className={etiquetaClases}>Contacto</label>
+          <Input id={`editar-${presupuesto.id}-contacto`} className={campoClases} value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} placeholder="Nombre" />
+          <Input className={`${campoClases} mt-1.5`} value={contactoTelefono} onChange={(e) => setContactoTelefono(e.target.value)} placeholder="Teléfono" />
         </div>
       )}
 
-      {error && <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 12 }}>{error}</div>}
+      {error && <div className="col-span-full text-warning text-sm">{error}</div>}
 
-      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
-        <button
+      <div className="col-span-full flex gap-2">
+        <Button
           type="submit"
           disabled={enviando}
-          style={{
-            background: 'var(--acento)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '8px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            opacity: enviando ? 0.6 : 1,
-          }}
+          className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
         >
           {enviando ? 'Guardando…' : 'Guardar cambios'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={onCancelar}
-          style={{ background: 'transparent', border: 'none', color: 'var(--tinta-suave)', fontSize: 13 }}
+          disabled={enviando}
+          className="rounded-sharp border border-line text-text-gray-light hover:text-white"
         >
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -487,43 +405,25 @@ function FormularioFirma({
     }
   }
 
-  const campo: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    borderRadius: 'var(--radio)',
-    padding: '8px 10px',
-    fontSize: 13,
-    background: 'var(--papel)',
-  };
-
   return (
     <form
       onSubmit={enviar}
-      style={{
-        margin: '0 4px 16px',
-        padding: 16,
-        background: 'var(--acento-suave)',
-        borderRadius: 'var(--radio)',
-        display: 'grid',
-        gridTemplateColumns: necesitaCliente ? '1fr 1fr 1fr' : '1fr',
-        gap: 10,
-      }}
+      className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
+        necesitaCliente ? 'grid-cols-3' : 'grid-cols-1'
+      }`}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <label htmlFor={`firma-${presupuesto.id}-expediente`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Expediente
-        </label>
+      <div className="flex flex-col gap-1 col-span-full">
+        <label htmlFor={`firma-${presupuesto.id}-expediente`} className={etiquetaClases}>Expediente</label>
         <select
           id={`firma-${presupuesto.id}-expediente`}
-          style={campo}
           value={expedienteId}
           onChange={(e) => setExpedienteId(e.target.value)}
           required
+          className={`${campoClases} block w-full h-8 px-2.5 text-sm text-white outline-none border`}
         >
-          <option value="" disabled>
-            Elegí un expediente
-          </option>
+          <option value="" disabled>Elegí un expediente</option>
           {expedientes.map((e) => (
-            <option key={e.id} value={e.id}>
+            <option key={e.id} value={e.id} className="bg-graphite text-white">
               {e.caratula}
             </option>
           ))}
@@ -532,72 +432,40 @@ function FormularioFirma({
 
       {necesitaCliente && (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor={`firma-${presupuesto.id}-nombre`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-              Nombre
-            </label>
-            <input
-              id={`firma-${presupuesto.id}-nombre`}
-              style={campo}
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`firma-${presupuesto.id}-nombre`} className={etiquetaClases}>Nombre</label>
+            <Input id={`firma-${presupuesto.id}-nombre`} className={campoClases} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor={`firma-${presupuesto.id}-apellido`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-              Apellido
-            </label>
-            <input
-              id={`firma-${presupuesto.id}-apellido`}
-              style={campo}
-              value={apellido}
-              onChange={(e) => setApellido(e.target.value)}
-              required
-            />
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`firma-${presupuesto.id}-apellido`} className={etiquetaClases}>Apellido</label>
+            <Input id={`firma-${presupuesto.id}-apellido`} className={campoClases} value={apellido} onChange={(e) => setApellido(e.target.value)} required />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor={`firma-${presupuesto.id}-dni`} style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-              DNI
-            </label>
-            <input id={`firma-${presupuesto.id}-dni`} style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`firma-${presupuesto.id}-dni`} className={etiquetaClases}>DNI</label>
+            <Input id={`firma-${presupuesto.id}-dni`} className={campoClases} value={dni} onChange={(e) => setDni(e.target.value)} />
           </div>
         </>
       )}
 
-      {error && (
-        <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 12 }}>{error}</div>
-      )}
+      {error && <div className="col-span-full text-warning text-sm">{error}</div>}
 
-      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
-        <button
+      <div className="col-span-full flex gap-2">
+        <Button
           type="submit"
           disabled={enviando || expedientes.length === 0}
-          style={{
-            background: 'var(--exito)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '8px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            opacity: enviando || expedientes.length === 0 ? 0.6 : 1,
-          }}
+          className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
         >
           {enviando ? 'Firmando…' : 'Confirmar firma'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={onCancelar}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--tinta-suave)',
-            fontSize: 13,
-          }}
+          disabled={enviando}
+          className="rounded-sharp border border-line text-text-gray-light hover:text-white"
         >
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -643,66 +511,47 @@ function FormularioNuevoPresupuesto({
     }
   }
 
-  const campo: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    borderRadius: 'var(--radio)',
-    padding: '9px 12px',
-    fontSize: 14,
-    background: 'var(--papel-elevado)',
-  };
-
   return (
     <form
       onSubmit={enviar}
-      style={{
-        border: '1px solid var(--linea)',
-        borderRadius: 'var(--radio)',
-        padding: 20,
-        marginBottom: 24,
-        background: 'var(--papel-elevado)',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 12,
-      }}
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
     >
-      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 16, fontSize: 13 }}>
-        <label htmlFor="nuevo-presupuesto-cliente-existente" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div className="col-span-2 flex gap-4 text-sm text-white">
+        <label htmlFor="nuevo-presupuesto-cliente-existente" className="flex items-center gap-1.5 cursor-pointer">
           <input
             id="nuevo-presupuesto-cliente-existente"
             type="radio"
             checked={usaClienteExistente}
             onChange={() => setUsaClienteExistente(true)}
+            className="accent-silver"
           />
           Cliente existente
         </label>
-        <label htmlFor="nuevo-presupuesto-contacto-nuevo" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label htmlFor="nuevo-presupuesto-contacto-nuevo" className="flex items-center gap-1.5 cursor-pointer">
           <input
             id="nuevo-presupuesto-contacto-nuevo"
             type="radio"
             checked={!usaClienteExistente}
             onChange={() => setUsaClienteExistente(false)}
+            className="accent-silver"
           />
           Contacto nuevo (potencial cliente)
         </label>
       </div>
 
       {usaClienteExistente ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-          <label htmlFor="nuevo-presupuesto-cliente" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-            Cliente
-          </label>
+        <div className="flex flex-col gap-1 col-span-2">
+          <label htmlFor="nuevo-presupuesto-cliente" className={etiquetaClases}>Cliente</label>
           <select
             id="nuevo-presupuesto-cliente"
-            style={campo}
             value={clienteId}
             onChange={(e) => setClienteId(e.target.value)}
             required
+            className={`${campoClases} block w-full h-8 px-2.5 text-sm text-white outline-none border`}
           >
-            <option value="" disabled>
-              Elegí un cliente
-            </option>
+            <option value="" disabled>Elegí un cliente</option>
             {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.id} value={c.id} className="bg-graphite text-white">
                 {c.apellido}, {c.nombre}
               </option>
             ))}
@@ -710,81 +559,36 @@ function FormularioNuevoPresupuesto({
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="nuevo-presupuesto-contacto-nombre" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-              Nombre del contacto
-            </label>
-            <input
-              id="nuevo-presupuesto-contacto-nombre"
-              style={campo}
-              value={contactoNombre}
-              onChange={(e) => setContactoNombre(e.target.value)}
-              required
-            />
+          <div className="flex flex-col gap-1">
+            <label htmlFor="nuevo-presupuesto-contacto-nombre" className={etiquetaClases}>Nombre del contacto</label>
+            <Input id="nuevo-presupuesto-contacto-nombre" className={campoClases} value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} required />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="nuevo-presupuesto-contacto-telefono" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-              Teléfono
-            </label>
-            <input
-              id="nuevo-presupuesto-contacto-telefono"
-              style={campo}
-              value={contactoTelefono}
-              onChange={(e) => setContactoTelefono(e.target.value)}
-            />
+          <div className="flex flex-col gap-1">
+            <label htmlFor="nuevo-presupuesto-contacto-telefono" className={etiquetaClases}>Teléfono</label>
+            <Input id="nuevo-presupuesto-contacto-telefono" className={campoClases} value={contactoTelefono} onChange={(e) => setContactoTelefono(e.target.value)} />
           </div>
         </>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-presupuesto-concepto" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Concepto
-        </label>
-        <input
-          id="nuevo-presupuesto-concepto"
-          style={campo}
-          value={concepto}
-          onChange={(e) => setConcepto(e.target.value)}
-          required
-        />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="nuevo-presupuesto-concepto" className={etiquetaClases}>Concepto</label>
+        <Input id="nuevo-presupuesto-concepto" className={campoClases} value={concepto} onChange={(e) => setConcepto(e.target.value)} required />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="nuevo-presupuesto-monto" style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
-          Monto ($)
-        </label>
-        <input
-          id="nuevo-presupuesto-monto"
-          style={campo}
-          type="number"
-          min="0"
-          step="0.01"
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          required
-        />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="nuevo-presupuesto-monto" className={etiquetaClases}>Monto ($)</label>
+        <Input id="nuevo-presupuesto-monto" type="number" min="0" step="0.01" className={campoClases} value={monto} onChange={(e) => setMonto(e.target.value)} required />
       </div>
 
-      {error && (
-        <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>
-      )}
+      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
 
-      <div style={{ gridColumn: '1 / -1' }}>
-        <button
+      <div className="col-span-2">
+        <Button
           type="submit"
           disabled={enviando}
-          style={{
-            background: 'var(--acento)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '9px 18px',
-            fontSize: 14,
-            fontWeight: 600,
-            opacity: enviando ? 0.6 : 1,
-          }}
+          className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
         >
           {enviando ? 'Guardando…' : 'Guardar presupuesto'}
-        </button>
+        </Button>
       </div>
     </form>
   );

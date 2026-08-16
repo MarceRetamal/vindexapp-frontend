@@ -24,22 +24,6 @@
   --radius-lg: 0.375rem;
 }
 
-/* Alias legacy (tema "paper-archive") sobre los tokens de marca VINDEX,
-   para páginas todavía no migradas a Tailwind/shadcn (Fase 2 pendiente). */
-:root {
-  --tinta: var(--color-white);
-  --tinta-suave: var(--color-text-gray-light);
-  --papel: var(--color-structural-black);
-  --papel-elevado: var(--color-graphite);
-  --linea: var(--color-line);
-  --radio: var(--radius-sharp);
-  --acento: var(--color-silver);
-  --acento-suave: color-mix(in srgb, var(--color-silver) 15%, transparent);
-  --alerta: var(--color-warning);
-  --exito: var(--color-success);
-  --fuente-dato: var(--font-mono);
-}
-
 html, body, #root {
   height: 100%;
   margin: 0;
