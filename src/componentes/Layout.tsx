@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import logo from '@/assets/vindex-isologo.png';
@@ -13,6 +13,7 @@ const SECCIONES = [
 
 export function Layout() {
   const location = useLocation();
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="flex min-h-screen bg-structural-black">
@@ -52,10 +53,10 @@ export function Layout() {
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
           >
             <Outlet />
           </motion.div>
