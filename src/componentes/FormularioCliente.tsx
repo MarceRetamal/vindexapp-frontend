@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { api, type Cliente, type DatosCliente } from '../api/cliente';
+import { Input } from '@/componentes/ui/input';
+import { Textarea } from '@/componentes/ui/textarea';
+import { Button } from '@/componentes/ui/button';
 
-const campo: React.CSSProperties = {
-  border: '1px solid var(--linea)',
-  borderRadius: 'var(--radio)',
-  padding: '9px 12px',
-  fontSize: 14,
-  background: 'var(--papel-elevado)',
-};
-
-const etiqueta: React.CSSProperties = { fontSize: 12, color: 'var(--tinta-suave)' };
+const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
+const etiquetaClases = 'text-xs text-text-gray-light';
 
 export function FormularioCliente({
   cliente,
@@ -66,97 +62,70 @@ export function FormularioCliente({
   return (
     <form
       onSubmit={enviar}
-      style={{
-        border: '1px solid var(--linea)',
-        borderRadius: 'var(--radio)',
-        padding: 20,
-        marginBottom: 24,
-        background: 'var(--papel-elevado)',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 12,
-      }}
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-nombre" style={etiqueta}>Nombre</label>
-        <input id="cliente-nombre" style={campo} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-nombre" className={etiquetaClases}>Nombre</label>
+        <Input id="cliente-nombre" className={campoClases} value={nombre} onChange={(e) => setNombre(e.target.value)} required />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-apellido" style={etiqueta}>Apellido</label>
-        <input id="cliente-apellido" style={campo} value={apellido} onChange={(e) => setApellido(e.target.value)} required />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-apellido" className={etiquetaClases}>Apellido</label>
+        <Input id="cliente-apellido" className={campoClases} value={apellido} onChange={(e) => setApellido(e.target.value)} required />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-dni" style={etiqueta}>DNI</label>
-        <input id="cliente-dni" style={campo} value={dni} onChange={(e) => setDni(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-dni" className={etiquetaClases}>DNI</label>
+        <Input id="cliente-dni" className={campoClases} value={dni} onChange={(e) => setDni(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-email" style={etiqueta}>Email</label>
-        <input id="cliente-email" type="email" style={campo} value={email} onChange={(e) => setEmail(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-email" className={etiquetaClases}>Email</label>
+        <Input id="cliente-email" type="email" className={campoClases} value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-whatsapp" style={etiqueta}>WhatsApp</label>
-        <input id="cliente-whatsapp" style={campo} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-whatsapp" className={etiquetaClases}>WhatsApp</label>
+        <Input id="cliente-whatsapp" className={campoClases} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-telefono" style={etiqueta}>Teléfono fijo</label>
-        <input id="cliente-telefono" style={campo} value={telefonoFijo} onChange={(e) => setTelefonoFijo(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-telefono" className={etiquetaClases}>Teléfono fijo</label>
+        <Input id="cliente-telefono" className={campoClases} value={telefonoFijo} onChange={(e) => setTelefonoFijo(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-domicilio" style={etiqueta}>Domicilio</label>
-        <input id="cliente-domicilio" style={campo} value={domicilio} onChange={(e) => setDomicilio(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-domicilio" className={etiquetaClases}>Domicilio</label>
+        <Input id="cliente-domicilio" className={campoClases} value={domicilio} onChange={(e) => setDomicilio(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label htmlFor="cliente-localidad" style={etiqueta}>Localidad</label>
-        <input id="cliente-localidad" style={campo} value={localidad} onChange={(e) => setLocalidad(e.target.value)} />
+      <div className="flex flex-col gap-1">
+        <label htmlFor="cliente-localidad" className={etiquetaClases}>Localidad</label>
+        <Input id="cliente-localidad" className={campoClases} value={localidad} onChange={(e) => setLocalidad(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, gridColumn: '1 / -1' }}>
-        <label htmlFor="cliente-notas" style={etiqueta}>Notas</label>
-        <textarea
+      <div className="flex flex-col gap-1 col-span-2">
+        <label htmlFor="cliente-notas" className={etiquetaClases}>Notas</label>
+        <Textarea
           id="cliente-notas"
-          style={{ ...campo, resize: 'vertical', minHeight: 60 }}
+          className={`${campoClases} resize-y min-h-[60px]`}
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
         />
       </div>
 
-      {error && (
-        <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>
-      )}
+      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
 
-      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
-        <button
+      <div className="col-span-2 flex gap-2">
+        <Button
           type="submit"
           disabled={enviando}
-          style={{
-            background: 'var(--acento)',
-            color: 'var(--papel)',
-            border: 'none',
-            borderRadius: 'var(--radio)',
-            padding: '9px 18px',
-            fontSize: 14,
-            fontWeight: 600,
-            opacity: enviando ? 0.6 : 1,
-          }}
+          className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
         >
           {enviando ? 'Guardando…' : cliente ? 'Guardar cambios' : 'Guardar cliente'}
-        </button>
+        </Button>
         {onCancelar && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onCancelar}
             disabled={enviando}
-            style={{
-              background: 'transparent',
-              color: 'var(--tinta-suave)',
-              border: '1px solid var(--linea)',
-              borderRadius: 'var(--radio)',
-              padding: '9px 18px',
-              fontSize: 14,
-              fontWeight: 600,
-            }}
+            className="rounded-sharp border border-line text-text-gray-light hover:text-white"
           >
             Cancelar
-          </button>
+          </Button>
         )}
       </div>
     </form>

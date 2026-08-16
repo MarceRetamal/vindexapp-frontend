@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api, type Cliente } from '../api/cliente';
-import { EstadoBadge } from './Clientes';
+import { EstadoBadge } from '../componentes/EstadoBadge';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 
 export function ClienteDetalle() {
@@ -70,7 +70,10 @@ export function ClienteDetalle() {
             {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
           </p>
         </div>
-        <EstadoBadge estado={cliente.estado} />
+        <EstadoBadge
+          estado={cliente.estado}
+          colorMap={{ Activo: 'success', Potencial: 'warning', Inactivo: 'neutral' }}
+        />
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
