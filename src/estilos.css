@@ -17,6 +17,7 @@
 
   --font-sans: "Lato", -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-heading: "Lato", -apple-system, sans-serif;
 
   --radius-sharp: 0.125rem;
   --radius-md: 0.25rem;
@@ -76,13 +77,6 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
