@@ -1,5 +1,11 @@
 import { useState } from 'react';
 import { api, type ResultadoLiquidacion, type TipoExtincion } from '../api/liquidaciones';
+import { Input } from '@/componentes/ui/input';
+import { Button } from '@/componentes/ui/button';
+import { ErrorBanner } from '@/componentes/ErrorBanner';
+
+const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
+const etiquetaClases = 'text-xs text-text-gray-light';
 
 const FORMATO_MONTO = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -69,21 +75,11 @@ export function Liquidaciones() {
     }
   }
 
-  const campo: React.CSSProperties = {
-    border: '1px solid var(--linea)',
-    borderRadius: 'var(--radio)',
-    padding: '9px 12px',
-    fontSize: 14,
-    background: 'var(--papel-elevado)',
-  };
-
-  const etiquetaCampo: React.CSSProperties = { fontSize: 12, color: 'var(--tinta-suave)' };
-
   return (
     <div>
-      <header style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26 }}>Liquidaciones</h1>
-        <p style={{ color: 'var(--tinta-suave)', margin: '4px 0 0', fontSize: 13 }}>
+      <header className="mb-7">
+        <h1 className="text-2xl font-black uppercase tracking-wide text-white">Liquidaciones</h1>
+        <p className="text-text-gray-light text-sm mt-1">
           Casas particulares (Ley 26.844) — despido sin causa o indirecto.
           Los regímenes de LCT y Construcción todavía no están disponibles.
         </p>
@@ -91,115 +87,107 @@ export function Liquidaciones() {
 
       <form
         onSubmit={enviar}
-        style={{
-          border: '1px solid var(--linea)',
-          borderRadius: 'var(--radio)',
-          padding: 20,
-          marginBottom: 24,
-          background: 'var(--papel-elevado)',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 12,
-        }}
+        className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor="liq-fecha-ingreso" style={etiquetaCampo}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="liq-fecha-ingreso" className={etiquetaClases}>
             Fecha de ingreso
           </label>
-          <input
+          <Input
             id="liq-fecha-ingreso"
             type="date"
-            style={campo}
+            className={campoClases}
             value={fechaIngreso}
             onChange={(e) => setFechaIngreso(e.target.value)}
             required
           />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor="liq-fecha-egreso" style={etiquetaCampo}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="liq-fecha-egreso" className={etiquetaClases}>
             Fecha de egreso
           </label>
-          <input
+          <Input
             id="liq-fecha-egreso"
             type="date"
-            style={campo}
+            className={campoClases}
             value={fechaEgreso}
             onChange={(e) => setFechaEgreso(e.target.value)}
             required
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor="liq-remuneracion" style={etiquetaCampo}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="liq-remuneracion" className={etiquetaClases}>
             Mejor remuneración mensual ($)
           </label>
-          <input
+          <Input
             id="liq-remuneracion"
             type="number"
             min="0"
             step="0.01"
-            style={campo}
+            className={campoClases}
             value={mejorRemuneracion}
             onChange={(e) => setMejorRemuneracion(e.target.value)}
             required
           />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor="liq-tipo-extincion" style={etiquetaCampo}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="liq-tipo-extincion" className={etiquetaClases}>
             Tipo de extinción
           </label>
           <select
             id="liq-tipo-extincion"
-            style={campo}
+            className={`${campoClases} h-8 w-full px-2.5 text-sm text-white outline-none border`}
             value={tipoExtincion}
             onChange={(e) => setTipoExtincion(e.target.value as TipoExtincion)}
           >
             {Object.entries(ETIQUETAS_TIPO_EXTINCION).map(([valor, etiqueta]) => (
-              <option key={valor} value={valor}>
+              <option key={valor} value={valor} className="bg-graphite text-white">
                 {etiqueta}
               </option>
             ))}
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label htmlFor="liq-dias-trabajados" style={etiquetaCampo}>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="liq-dias-trabajados" className={etiquetaClases}>
             Días trabajados en el año en curso
           </label>
-          <input
+          <Input
             id="liq-dias-trabajados"
             type="number"
             min="0"
             step="1"
-            style={campo}
+            className={campoClases}
             value={diasTrabajadosAnioEnCurso}
             onChange={(e) => setDiasTrabajadosAnioEnCurso(e.target.value)}
             required
           />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'flex-end' }}>
-          <label htmlFor="liq-preaviso-otorgado" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+        <div className="flex flex-col gap-1 justify-end">
+          <label htmlFor="liq-preaviso-otorgado" className="flex items-center gap-2 text-sm text-white">
             <input
               id="liq-preaviso-otorgado"
               type="checkbox"
               checked={preavisoOtorgado}
               onChange={(e) => setPreavisoOtorgado(e.target.checked)}
+              className="accent-silver"
             />
             Se otorgó preaviso
           </label>
         </div>
 
         {preavisoOtorgado && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="liq-dias-preaviso" style={etiquetaCampo}>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="liq-dias-preaviso" className={etiquetaClases}>
               Días de preaviso otorgados
             </label>
-            <input
+            <Input
               id="liq-dias-preaviso"
               type="number"
               min="0"
               step="1"
-              style={campo}
+              className={campoClases}
               value={diasPreavisoOtorgados}
               onChange={(e) => setDiasPreavisoOtorgados(e.target.value)}
             />
@@ -207,26 +195,19 @@ export function Liquidaciones() {
         )}
 
         {error && (
-          <div style={{ gridColumn: '1 / -1', color: 'var(--alerta)', fontSize: 13 }}>{error}</div>
+          <div className="col-span-2">
+            <ErrorBanner message={error} />
+          </div>
         )}
 
-        <div style={{ gridColumn: '1 / -1' }}>
-          <button
+        <div className="col-span-2">
+          <Button
             type="submit"
             disabled={calculando}
-            style={{
-              background: 'var(--acento)',
-              color: 'var(--papel)',
-              border: 'none',
-              borderRadius: 'var(--radio)',
-              padding: '9px 18px',
-              fontSize: 14,
-              fontWeight: 600,
-              opacity: calculando ? 0.6 : 1,
-            }}
+            className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
           >
             {calculando ? 'Calculando…' : 'Calcular liquidación'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -237,65 +218,36 @@ export function Liquidaciones() {
 
 function ResultadoLiquidacionCard({ resultado }: { resultado: ResultadoLiquidacion }) {
   return (
-    <div
-      style={{
-        border: '1px solid var(--linea)',
-        borderRadius: 'var(--radio)',
-        padding: 20,
-        background: 'var(--papel-elevado)',
-      }}
-    >
-      <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--tinta-suave)' }}>
+    <div className="border border-line rounded-sharp p-5 bg-graphite">
+      <div className="mb-4 text-sm text-text-gray-light">
         Antigüedad: {resultado.antiguedad.aniosCompletos} años, {resultado.antiguedad.mesesRestantes} meses
         ({resultado.antiguedad.diasTotales} días totales)
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="flex flex-col">
         {CONCEPTOS.map(({ clave, etiqueta }) => (
           <div
             key={clave}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '8px 0',
-              borderBottom: '1px solid var(--linea)',
-              fontSize: 13,
-            }}
+            className="flex justify-between py-2 border-b border-line text-sm text-white"
           >
             <span>{etiqueta}</span>
-            <span style={{ fontFamily: 'var(--fuente-dato)' }}>
+            <span className="font-mono">
               {FORMATO_MONTO.format(resultado[clave] as number)}
             </span>
           </div>
         ))}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '12px 0 0',
-            fontSize: 16,
-            fontWeight: 600,
-          }}
-        >
+        <div className="flex justify-between pt-3 text-base font-bold text-white">
           <span>Total bruto</span>
-          <span style={{ fontFamily: 'var(--fuente-dato)' }}>{FORMATO_MONTO.format(resultado.totalBruto)}</span>
+          <span className="font-mono">{FORMATO_MONTO.format(resultado.totalBruto)}</span>
         </div>
       </div>
 
       {resultado.advertencias.length > 0 && (
-        <div
-          style={{
-            marginTop: 20,
-            background: '#fdf1ef',
-            border: '1px solid var(--alerta)',
-            borderRadius: 'var(--radio)',
-            padding: '12px 16px',
-          }}
-        >
+        <div className="mt-5">
           {resultado.advertencias.map((advertencia, i) => (
-            <p key={i} style={{ margin: i === 0 ? 0 : '8px 0 0', color: 'var(--alerta)', fontSize: 12 }}>
-              {advertencia}
-            </p>
+            <div key={i} className={i > 0 ? 'mt-2' : ''}>
+              <ErrorBanner message={advertencia} />
+            </div>
           ))}
         </div>
       )}

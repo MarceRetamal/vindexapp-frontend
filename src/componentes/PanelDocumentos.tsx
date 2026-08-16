@@ -8,6 +8,12 @@ import {
   type CategoriaDocumento,
   type Documento,
 } from '../api/documentos';
+import { Input } from '@/componentes/ui/input';
+import { Button } from '@/componentes/ui/button';
+import { ErrorBanner } from '@/componentes/ErrorBanner';
+
+const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
+const etiquetaClases = 'text-xs text-text-gray-light';
 
 const formateadorFecha = new Intl.DateTimeFormat('es-AR', {
   timeZone: 'America/Argentina/Buenos_Aires',
@@ -104,18 +110,11 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
   const total = documentos?.length ?? 0;
 
   return (
-    <section style={{ marginTop: 32 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 12,
-        }}
-      >
-        <h2 style={{ fontSize: 17 }}>Documentos</h2>
+    <section className="mt-8">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-lg font-bold text-white">Documentos</h2>
         {total > 0 && (
-          <span style={{ fontSize: 12, color: 'var(--tinta-suave)', fontFamily: 'var(--fuente-dato)' }}>
+          <span className="text-xs text-text-gray-light font-mono">
             {total} {total === 1 ? 'ficha' : 'fichas'}
           </span>
         )}
@@ -136,19 +135,11 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
             const archivo = e.dataTransfer.files?.[0];
             if (archivo && !subiendo) elegirArchivo(archivo);
           }}
-          style={{
-            border: `1px dashed ${arrastrando ? 'var(--acento)' : 'var(--linea)'}`,
-            borderRadius: 'var(--radio)',
-            background: arrastrando ? 'var(--acento-suave)' : 'var(--papel-elevado)',
-            padding: '22px 16px',
-            textAlign: 'center',
-            cursor: subiendo ? 'default' : 'pointer',
-            opacity: subiendo ? 0.5 : 1,
-            transition: 'border-color .15s ease, background .15s ease, transform .15s ease',
-            transform: arrastrando ? 'scale(1.005)' : 'scale(1)',
-          }}
+          className={`rounded-sharp border border-dashed px-4 py-6 text-center transition-colors ${
+            subiendo ? 'cursor-default opacity-50' : 'cursor-pointer'
+          } ${arrastrando ? 'border-silver bg-graphite' : 'border-line bg-graphite/60'}`}
         >
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--tinta-suave)' }}>
+          <p className="m-0 text-sm text-text-gray-light">
             Arrastrá un documento acá, o hacé clic para seleccionarlo
           </p>
           <input
@@ -158,48 +149,27 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
               const archivo = e.target.files?.[0];
               if (archivo) elegirArchivo(archivo);
             }}
-            style={{ display: 'none' }}
+            className="hidden"
           />
         </div>
       )}
 
       {/* Ficha pendiente de archivar */}
       {archivoPendiente && (
-        <div
-          style={{
-            border: '1px solid var(--linea)',
-            borderRadius: 'var(--radio)',
-            background: 'var(--papel-elevado)',
-            padding: 16,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, wordBreak: 'break-all' }}>
+        <div className="border border-line rounded-sharp bg-graphite p-4">
+          <div className="flex justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white break-all">
                 {archivoPendiente.name}
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: 'var(--tinta-suave)',
-                  fontFamily: 'var(--fuente-dato)',
-                  marginTop: 2,
-                }}
-              >
+              <div className="text-xs text-text-gray-light font-mono mt-0.5">
                 {formatearTamano(archivoPendiente.size)}
               </div>
             </div>
             {!subiendo && (
               <button
                 onClick={cancelarPendiente}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--tinta-suave)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
+                className="border-none bg-transparent text-text-gray-light text-xs cursor-pointer shrink-0 hover:text-white"
               >
                 Cancelar
               </button>
@@ -208,110 +178,56 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
 
           {!subiendo ? (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-                <label style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+              <div className="grid grid-cols-2 gap-2.5 mt-3.5">
+                <label htmlFor="doc-categoria" className={etiquetaClases}>
                   Categoría
                   <select
+                    id="doc-categoria"
                     value={categoria}
                     onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      marginTop: 4,
-                      padding: '6px 8px',
-                      border: '1px solid var(--linea)',
-                      borderRadius: 'var(--radio)',
-                      background: 'var(--papel)',
-                      color: 'var(--tinta)',
-                    }}
+                    className={`${campoClases} block w-full mt-1 h-8 px-2.5 text-sm text-white outline-none border`}
                   >
                     {CATEGORIAS.map((c) => (
-                      <option key={c.valor} value={c.valor}>
+                      <option key={c.valor} value={c.valor} className="bg-graphite text-white">
                         {c.etiqueta}
                       </option>
                     ))}
                   </select>
                 </label>
-                <label style={{ fontSize: 12, color: 'var(--tinta-suave)' }}>
+                <label htmlFor="doc-notas" className={etiquetaClases}>
                   Notas (opcional)
-                  <input
+                  <Input
+                    id="doc-notas"
                     type="text"
                     value={notas}
                     onChange={(e) => setNotas(e.target.value)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      marginTop: 4,
-                      padding: '6px 8px',
-                      border: '1px solid var(--linea)',
-                      borderRadius: 'var(--radio)',
-                      background: 'var(--papel)',
-                      color: 'var(--tinta)',
-                    }}
+                    className={`${campoClases} block w-full mt-1`}
                   />
                 </label>
               </div>
 
               {errorSubida && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    background: '#fdf1ef',
-                    border: '1px solid var(--alerta)',
-                    color: 'var(--alerta)',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radio)',
-                    fontSize: 12,
-                  }}
-                >
-                  {errorSubida}
+                <div className="mt-3">
+                  <ErrorBanner message={errorSubida} />
                 </div>
               )}
 
-              <button
+              <Button
                 onClick={confirmarSubida}
-                style={{
-                  marginTop: 14,
-                  border: 'none',
-                  borderRadius: 'var(--radio)',
-                  background: 'var(--acento)',
-                  color: '#fff',
-                  padding: '8px 18px',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                className="mt-3.5 rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
               >
                 Archivar
-              </button>
+              </Button>
             </>
           ) : (
-            <div style={{ marginTop: 14 }}>
-              <div
-                style={{
-                  height: 3,
-                  borderRadius: 'var(--radio)',
-                  background: 'var(--linea)',
-                  overflow: 'hidden',
-                }}
-              >
+            <div className="mt-3.5">
+              <div className="h-[3px] rounded-sharp bg-line overflow-hidden">
                 <div
-                  style={{
-                    height: '100%',
-                    width: `${Math.round(progreso * 100)}%`,
-                    background: 'var(--acento)',
-                    transition: 'width .15s ease',
-                  }}
+                  className="h-full bg-silver transition-[width] duration-150 ease-out"
+                  style={{ width: `${Math.round(progreso * 100)}%` }}
                 />
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: 'var(--tinta-suave)',
-                  fontFamily: 'var(--fuente-dato)',
-                  marginTop: 6,
-                }}
-              >
+              <div className="text-xs text-text-gray-light font-mono mt-1.5">
                 Archivando… {Math.round(progreso * 100)}%
               </div>
             </div>
@@ -320,17 +236,17 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
       )}
 
       {/* Ledger */}
-      <div style={{ marginTop: 18 }}>
+      <div className="mt-4">
         {error && (
-          <p style={{ fontSize: 13, color: 'var(--alerta)' }}>No se pudo cargar el listado: {error}</p>
+          <p className="text-sm text-warning">No se pudo cargar el listado: {error}</p>
         )}
 
         {documentos === null && !error && (
-          <p style={{ fontSize: 13, color: 'var(--tinta-suave)' }}>Cargando…</p>
+          <p className="text-sm text-text-gray-light">Cargando…</p>
         )}
 
         {documentos !== null && documentos.length === 0 && (
-          <p style={{ fontSize: 13, color: 'var(--tinta-suave)', fontStyle: 'italic' }}>
+          <p className="text-sm text-text-gray-light italic">
             Todavía no se archivó ningún documento en este expediente.
           </p>
         )}
@@ -374,62 +290,41 @@ function FilaDocumento({
 
   return (
     <div
+      className="grid items-center gap-3 py-2.5 px-1 border-b border-line transition-[opacity,transform] duration-250 ease-out"
       style={{
-        display: 'grid',
         gridTemplateColumns: '44px 40px 1fr auto auto',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 4px',
-        borderBottom: '1px solid var(--linea)',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(-4px)',
-        transition: 'opacity .25s ease, transform .25s ease',
       }}
     >
-      <span style={{ fontSize: 11, color: 'var(--tinta-suave)', fontFamily: 'var(--fuente-dato)' }}>
+      <span className="text-xs text-text-gray-light font-mono">
         N.° {String(folio).padStart(3, '0')}
       </span>
 
       <span
-        style={{
-          fontSize: 10,
-          fontFamily: 'var(--fuente-dato)',
-          fontWeight: 600,
-          color: 'var(--acento)',
-          border: '1px solid var(--acento)',
-          borderRadius: 'var(--radio)',
-          padding: '2px 5px',
-          textAlign: 'center',
-        }}
+        className="text-[10px] font-mono font-semibold text-silver border border-silver rounded-sharp px-1.5 py-0.5 text-center"
         title={CATEGORIAS.find((c) => c.valor === documento.categoria)?.etiqueta}
       >
         {CODIGOS[documento.categoria]}
       </span>
 
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, wordBreak: 'break-word' }}>{documento.nombre}</div>
+      <div className="min-w-0">
+        <div className="text-sm text-white break-words">{documento.nombre}</div>
         {documento.notas && (
-          <div style={{ fontSize: 11, color: 'var(--tinta-suave)', marginTop: 2 }}>{documento.notas}</div>
+          <div className="text-xs text-text-gray-light mt-0.5">{documento.notas}</div>
         )}
       </div>
 
-      <span style={{ fontSize: 11, color: 'var(--tinta-suave)', fontFamily: 'var(--fuente-dato)', whiteSpace: 'nowrap' }}>
+      <span className="text-xs text-text-gray-light font-mono whitespace-nowrap">
         {formatearTamano(documento.tamano_bytes)} · {formateadorFecha.format(new Date(documento.creado_en))}
       </span>
 
       <button
         onClick={onDescargar}
         disabled={descargando}
-        style={{
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--acento)',
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: descargando ? 'default' : 'pointer',
-          opacity: descargando ? 0.5 : 1,
-          whiteSpace: 'nowrap',
-        }}
+        className={`border-none bg-transparent text-silver text-xs font-semibold whitespace-nowrap ${
+          descargando ? 'cursor-default opacity-50' : 'cursor-pointer hover:brightness-125'
+        }`}
       >
         {descargando ? 'Preparando…' : 'Descargar'}
       </button>
