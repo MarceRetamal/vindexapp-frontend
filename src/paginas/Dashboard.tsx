@@ -6,12 +6,17 @@ import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 
-const formateadorFecha = new Intl.DateTimeFormat('es-AR', {
-  timeZone: 'America/Argentina/Buenos_Aires',
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
+function formatearFechaISO(fechaISO: string): string {
+  const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+function fechaISOVencida(fechaISO: string): boolean {
+  const hoy = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(new Date());
+  return fechaISO.slice(0, 10) < hoy;
+}
 
 export function Dashboard() {
   const [datos, setDatos] = useState<DashboardData | null>(null);
@@ -150,7 +155,7 @@ function FilaDashboard({
   fecha: string | null;
   urgente?: boolean;
 }) {
-  const vencida = urgente && fecha != null && new Date(fecha).getTime() < Date.now();
+  const vencida = urgente && fecha != null && fechaISOVencida(fecha);
 
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
@@ -166,7 +171,7 @@ function FilaDashboard({
         </div>
         {fecha && (
           <span className={`text-xs font-mono shrink-0 ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
-            {formateadorFecha.format(new Date(fecha))}
+            {formatearFechaISO(fecha)}
           </span>
         )}
       </Link>

@@ -24,12 +24,17 @@ import {
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
 
-const formateadorFecha = new Intl.DateTimeFormat('es-AR', {
-  timeZone: 'America/Argentina/Buenos_Aires',
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
+function formatearFechaISO(fechaISO: string): string {
+  const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+function fechaISOVencida(fechaISO: string): boolean {
+  const hoy = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(new Date());
+  return fechaISO.slice(0, 10) < hoy;
+}
 
 export function ExpedienteDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -285,8 +290,7 @@ function FilaActuacion({
   const [abierta, setAbierta] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const esHito = actuacion.hito === 1;
-  const vencida =
-    actuacion.vencimiento != null && new Date(actuacion.vencimiento).getTime() < Date.now();
+  const vencida = actuacion.vencimiento != null && fechaISOVencida(actuacion.vencimiento);
 
   async function notificar(e: React.MouseEvent) {
     e.stopPropagation();
@@ -325,16 +329,16 @@ function FilaActuacion({
             {actuacion.vencimiento &&
               (vencida && actuacion.notificado !== 1 ? (
                 <Badge className="rounded-sharp uppercase text-xs bg-warning text-structural-black border-warning">
-                  Vencida: {formateadorFecha.format(new Date(actuacion.vencimiento))}
+                  Vencida: {formatearFechaISO(actuacion.vencimiento)}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-sharp uppercase text-xs border-warning text-warning">
-                  Vence: {formateadorFecha.format(new Date(actuacion.vencimiento))}
+                  Vence: {formatearFechaISO(actuacion.vencimiento)}
                 </Badge>
               ))}
           </div>
           <span className="text-xs text-text-gray-light font-mono">
-            {formateadorFecha.format(new Date(actuacion.fecha))}
+            {formatearFechaISO(actuacion.fecha)}
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -530,7 +534,7 @@ function FilaTarea({
   const [completando, setCompletando] = useState(false);
   const completada = tarea.estado === 'Completada';
   const vencida =
-    !completada && tarea.fecha_limite != null && new Date(tarea.fecha_limite).getTime() < Date.now();
+    !completada && tarea.fecha_limite != null && fechaISOVencida(tarea.fecha_limite);
 
   async function completar() {
     setCompletando(true);
@@ -575,7 +579,7 @@ function FilaTarea({
         </div>
         {tarea.fecha_limite && (
           <span className={`text-xs font-mono ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
-            Vence: {formateadorFecha.format(new Date(tarea.fecha_limite))}
+            Vence: {formatearFechaISO(tarea.fecha_limite)}
           </span>
         )}
       </div>
