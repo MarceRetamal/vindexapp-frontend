@@ -140,6 +140,13 @@ function subirConProgreso(
   });
 }
 
+export function eliminarDocumento(id: string): Promise<{ id: string }> {
+  const query = new URLSearchParams({ estudio_id: ESTUDIO_ID });
+  return pedido<{ id: string }>(`/documentos/${id}?${query.toString()}`, {
+    method: 'DELETE',
+  });
+}
+
 export function pedirDescarga(id: string): Promise<{
   url_descarga: string;
   nombre: string;

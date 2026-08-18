@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   CATEGORIAS,
   CODIGOS,
+  eliminarDocumento,
   listarDocumentos,
   pedirDescarga,
   subirDocumento,
@@ -62,6 +63,7 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
   const [errorSubida, setErrorSubida] = useState<string | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [descargandoId, setDescargandoId] = useState<string | null>(null);
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   const [generadorAbierto, setGeneradorAbierto] = useState(false);
   const [templates, setTemplates] = useState<Template[] | null>(null);
@@ -126,6 +128,21 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
       setError(`No se pudo preparar la descarga de "${documento.nombre}".`);
     } finally {
       setDescargandoId(null);
+    }
+  }
+
+  async function eliminar(documento: Documento) {
+    if (!window.confirm(`¿Eliminar el documento "${documento.nombre}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    setEliminandoId(documento.id);
+    try {
+      await eliminarDocumento(documento.id);
+      setDocumentos((actuales) => (actuales ?? []).filter((d) => d.id !== documento.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : `No se pudo eliminar el documento "${documento.nombre}".`);
+    } finally {
+      setEliminandoId(null);
     }
   }
 
@@ -377,6 +394,8 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
               esNueva={doc.id === ultimoIdAgregado}
               descargando={descargandoId === doc.id}
               onDescargar={() => descargar(doc)}
+              eliminando={eliminandoId === doc.id}
+              onEliminar={() => eliminar(doc)}
             />
           ))}
       </div>
@@ -390,12 +409,16 @@ function FilaDocumento({
   esNueva,
   descargando,
   onDescargar,
+  eliminando,
+  onEliminar,
 }: {
   documento: Documento;
   folio: number;
   esNueva: boolean;
   descargando: boolean;
   onDescargar: () => void;
+  eliminando: boolean;
+  onEliminar: () => void;
 }) {
   const [visible, setVisible] = useState(!esNueva);
 
@@ -409,7 +432,7 @@ function FilaDocumento({
     <div
       className="grid items-center gap-3 py-2.5 px-1 border-b border-line transition-[opacity,transform] duration-250 ease-out"
       style={{
-        gridTemplateColumns: '44px 40px minmax(0, 1fr) auto auto',
+        gridTemplateColumns: '44px 40px minmax(0, 1fr) auto auto auto',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(-4px)',
       }}
@@ -444,6 +467,16 @@ function FilaDocumento({
         }`}
       >
         {descargando ? 'Preparando…' : 'Descargar'}
+      </button>
+
+      <button
+        onClick={onEliminar}
+        disabled={eliminando}
+        className={`border-none bg-transparent text-warning text-xs font-semibold whitespace-nowrap ${
+          eliminando ? 'cursor-default opacity-50' : 'cursor-pointer hover:brightness-125'
+        }`}
+      >
+        {eliminando ? 'Eliminando…' : 'Eliminar'}
       </button>
     </div>
   );
