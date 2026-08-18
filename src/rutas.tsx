@@ -8,6 +8,7 @@ import { ExpedienteDetalle } from './paginas/ExpedienteDetalle';
 import { Presupuestos } from './paginas/Presupuestos';
 import { Agenda } from './paginas/Agenda';
 import { Liquidaciones } from './paginas/Liquidaciones';
+import { Reportes } from './paginas/Reportes';
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: 'presupuestos', element: <Presupuestos /> },
       { path: 'agenda', element: <Agenda /> },
       { path: 'liquidaciones', element: <Liquidaciones /> },
+      { path: 'reportes', element: <Reportes /> },
     ],
   },
 ]);

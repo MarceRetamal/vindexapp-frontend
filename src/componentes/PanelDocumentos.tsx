@@ -8,9 +8,25 @@ import {
   type CategoriaDocumento,
   type Documento,
 } from '../api/documentos';
+import { api as templatesApi, type Template } from '../api/templates';
+import { api as generadorApi } from '../api/generadorDocumentos';
 import { Input } from '@/componentes/ui/input';
 import { Button } from '@/componentes/ui/button';
 import { ErrorBanner } from '@/componentes/ErrorBanner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/componentes/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/componentes/ui/select';
 
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
@@ -46,6 +62,12 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
   const [errorSubida, setErrorSubida] = useState<string | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [descargandoId, setDescargandoId] = useState<string | null>(null);
+
+  const [generadorAbierto, setGeneradorAbierto] = useState(false);
+  const [templates, setTemplates] = useState<Template[] | null>(null);
+  const [templateSeleccionado, setTemplateSeleccionado] = useState<string | null>(null);
+  const [generando, setGenerando] = useState(false);
+  const [errorGenerador, setErrorGenerador] = useState<string | null>(null);
 
   const inputArchivoRef = useRef<HTMLInputElement>(null);
 
@@ -109,16 +131,111 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
 
   const total = documentos?.length ?? 0;
 
+  function abrirGenerador() {
+    setGeneradorAbierto(true);
+    setErrorGenerador(null);
+    setTemplateSeleccionado(null);
+    setTemplates(null);
+    templatesApi
+      .listarTemplates()
+      .then(setTemplates)
+      .catch((e: Error) => setErrorGenerador(e.message));
+  }
+
+  async function generarDocumento() {
+    if (!expedienteId || !templateSeleccionado) return;
+    setGenerando(true);
+    setErrorGenerador(null);
+    try {
+      await generadorApi.generarDocumento({
+        template_id: templateSeleccionado,
+        expediente_id: expedienteId,
+      });
+      const actualizados = await listarDocumentos({ expediente_id: expedienteId, cliente_id: clienteId });
+      const nuevo = actualizados.find(
+        (d) => !documentos?.some((existente) => existente.id === d.id)
+      );
+      setDocumentos(actualizados);
+      if (nuevo) setUltimoIdAgregado(nuevo.id);
+      setGeneradorAbierto(false);
+    } catch (e) {
+      setErrorGenerador(e instanceof Error ? e.message : 'Error desconocido al generar el documento.');
+    } finally {
+      setGenerando(false);
+    }
+  }
+
   return (
     <section className="mt-8">
       <div className="flex items-baseline justify-between mb-3">
         <h2 className="text-lg font-bold text-white">Documentos</h2>
-        {total > 0 && (
-          <span className="text-xs text-text-gray-light font-mono">
-            {total} {total === 1 ? 'ficha' : 'fichas'}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {total > 0 && (
+            <span className="text-xs text-text-gray-light font-mono">
+              {total} {total === 1 ? 'ficha' : 'fichas'}
+            </span>
+          )}
+          {expedienteId && (
+            <Button
+              onClick={abrirGenerador}
+              variant="outline"
+              className="rounded-sharp h-7 px-3 text-xs"
+            >
+              Generar documento
+            </Button>
+          )}
+        </div>
       </div>
+
+      {expedienteId && (
+        <Dialog open={generadorAbierto} onOpenChange={setGeneradorAbierto}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generar documento</DialogTitle>
+            </DialogHeader>
+
+            {templates === null && !errorGenerador && (
+              <p className="text-sm text-text-gray-light">Cargando templates…</p>
+            )}
+
+            {templates !== null && templates.length === 0 && (
+              <p className="text-sm text-text-gray-light italic">
+                No hay templates cargados todavía.
+              </p>
+            )}
+
+            {templates !== null && templates.length > 0 && (
+              <Select
+                value={templateSeleccionado ?? undefined}
+                onValueChange={(v) => setTemplateSeleccionado(v as string)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Elegí un template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {errorGenerador && <ErrorBanner message={errorGenerador} />}
+
+            <DialogFooter>
+              <Button
+                onClick={generarDocumento}
+                disabled={!templateSeleccionado || generando}
+                className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110"
+              >
+                {generando ? 'Generando…' : 'Generar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Bandeja de recepción */}
       {!archivoPendiente && (
