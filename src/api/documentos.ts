@@ -140,9 +140,9 @@ function subirConProgreso(
   });
 }
 
-export function eliminarDocumento(id: string): Promise<{ id: string }> {
+export function eliminarDocumento(id: string): Promise<{ id: string; eliminado: boolean }> {
   const query = new URLSearchParams({ estudio_id: ESTUDIO_ID });
-  return pedido<{ id: string }>(`/documentos/${id}?${query.toString()}`, {
+  return pedido<{ id: string; eliminado: boolean }>(`/documentos/${id}?${query.toString()}`, {
     method: 'DELETE',
   });
 }
