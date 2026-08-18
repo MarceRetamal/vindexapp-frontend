@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import logo from '@/assets/vindex-isologo.png';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const SECCIONES = [
   { ruta: '/', etiqueta: 'Inicio' },
@@ -61,7 +62,9 @@ export function Layout() {
             exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
           >
-            <Outlet />
+            <ErrorBoundary resetKey={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>

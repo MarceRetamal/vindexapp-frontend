@@ -65,14 +65,14 @@ function SeccionExpedientes() {
       ) : datos ? (
         <div className="flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Desglose titulo="Por estado" items={datos.porEstado.map((i) => ({ etiqueta: i.estado, valor: i.cantidad }))} />
-            <Desglose titulo="Por fuero" items={datos.porFuero.map((i) => ({ etiqueta: i.fuero, valor: i.cantidad }))} />
-            <Desglose titulo="Por departamento" items={datos.porDepartamento.map((i) => ({ etiqueta: i.departamento, valor: i.cantidad }))} />
+            <Desglose titulo="Por estado" items={(datos.porEstado ?? []).map((i) => ({ etiqueta: i.estado, valor: i.cantidad }))} />
+            <Desglose titulo="Por fuero" items={(datos.porFuero ?? []).map((i) => ({ etiqueta: i.fuero, valor: i.cantidad }))} />
+            <Desglose titulo="Por departamento" items={(datos.porDepartamento ?? []).map((i) => ({ etiqueta: i.departamento, valor: i.cantidad }))} />
           </div>
 
           <div>
             <h3 className="text-sm font-bold text-white mb-3">Bajas recientes (últimos 90 días)</h3>
-            {datos.bajasUltimos90Dias.length === 0 ? (
+            {(datos.bajasUltimos90Dias ?? []).length === 0 ? (
               <EmptyState message="No hubo bajas de expedientes en los últimos 90 días." />
             ) : (
               <motion.div
@@ -161,13 +161,13 @@ function SeccionPresupuestos() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="border border-line rounded-sharp bg-graphite p-4">
               <div className="text-2xl font-black text-white">
-                {formateadorPesos.format(datos.totalFirmadoCentavos / 100)}
+                {formateadorPesos.format((datos.totalFirmadoCentavos ?? 0) / 100)}
               </div>
               <div className="text-xs text-text-gray-light mt-1">Total firmado</div>
             </div>
             <div className="border border-line rounded-sharp bg-graphite p-4">
               <div className="text-2xl font-black text-white">
-                {formateadorPesos.format(datos.totalPendienteCentavos / 100)}
+                {formateadorPesos.format((datos.totalPendienteCentavos ?? 0) / 100)}
               </div>
               <div className="text-xs text-text-gray-light mt-1">Total pendiente</div>
             </div>
@@ -181,7 +181,7 @@ function SeccionPresupuestos() {
 
           <div>
             <h3 className="text-sm font-bold text-white mb-3">Por estado</h3>
-            {datos.porEstado.length === 0 ? (
+            {(datos.porEstado ?? []).length === 0 ? (
               <EmptyState message="No hay presupuestos en este rango de fechas." />
             ) : (
               <DesglosePresupuestos items={datos.porEstado} />
