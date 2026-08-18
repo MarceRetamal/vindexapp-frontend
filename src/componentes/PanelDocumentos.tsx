@@ -409,7 +409,7 @@ function FilaDocumento({
     <div
       className="grid items-center gap-3 py-2.5 px-1 border-b border-line transition-[opacity,transform] duration-250 ease-out"
       style={{
-        gridTemplateColumns: '44px 40px 1fr auto auto',
+        gridTemplateColumns: '44px 40px minmax(0, 1fr) auto auto',
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(-4px)',
       }}
