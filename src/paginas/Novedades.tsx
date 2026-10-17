@@ -56,6 +56,7 @@ export function Novedades() {
   const [cargandoMas, setCargandoMas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [marcandoTodas, setMarcandoTodas] = useState(false);
   const pedidoActual = useRef(0);
 
   // La búsqueda espera un instante después de tipear para no pedir en cada letra.
@@ -116,15 +117,38 @@ export function Novedades() {
     cargar();
   }
 
+  async function marcarTodasRevisadas() {
+    if (!window.confirm(`Se marcarán como revisadas las ${total} novedades pendientes (no solo las que se ven en la lista). ¿Seguimos?`)) return;
+    setMarcandoTodas(true);
+    setError(null);
+    try {
+      const r = await api.marcarRevisadas({ todas: true });
+      alMarcarEnBloque(r.marcadas);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudieron marcar las novedades.');
+    } finally {
+      setMarcandoTodas(false);
+    }
+  }
+
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-6">
+      <div className="flex items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-black uppercase tracking-wide text-white">
           Novedades{' '}
           <span className="text-text-gray-light font-normal normal-case tracking-normal">
             ({total} {estado === 'pendientes' ? 'pendientes' : estado === 'revisadas' ? 'revisadas' : 'en total'})
           </span>
         </h1>
+        {estado === 'pendientes' && total > 0 && !q && (
+          <Button
+            onClick={marcarTodasRevisadas}
+            disabled={marcandoTodas}
+            className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
+          >
+            {marcandoTodas ? 'Marcando…' : 'Marcar todas como revisadas'}
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -353,7 +377,7 @@ function AccionesEnBloque({
         aria-expanded={abierto}
         className="text-xs text-text-gray-light hover:text-white underline-offset-4 hover:underline"
       >
-        {abierto ? 'Ocultar acciones en bloque' : 'Acciones en bloque'}
+        {abierto ? 'Ocultar más opciones' : 'Más opciones: marcar hasta una fecha o solo las de la lista'}
       </button>
       {abierto && (
         <div className="mt-3 border border-line rounded-sharp bg-graphite p-4 flex flex-col gap-4">
