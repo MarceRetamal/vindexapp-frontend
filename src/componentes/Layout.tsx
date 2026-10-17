@@ -1,11 +1,14 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import logo from '@/assets/vindex-isologo.png';
+import { api as novedadesApi, EVENTO_NOVEDADES } from '../api/novedades';
 import { ErrorBoundary } from './ErrorBoundary';
 
 const SECCIONES = [
   { ruta: '/', etiqueta: 'Inicio' },
+  { ruta: '/novedades', etiqueta: 'Novedades' },
   { ruta: '/clientes', etiqueta: 'Clientes' },
   { ruta: '/expedientes', etiqueta: 'Expedientes' },
   { ruta: '/presupuestos', etiqueta: 'Presupuestos' },
@@ -17,6 +20,28 @@ const SECCIONES = [
 export function Layout() {
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
+  const [novedadesPendientes, setNovedadesPendientes] = useState(0);
+
+  // La cantidad de novedades pendientes se refresca al cambiar de pantalla y cuando la bandeja avisa un cambio.
+  useEffect(() => {
+    let vigente = true;
+    const refrescar = () => {
+      novedadesApi
+        .obtenerResumen()
+        .then((r) => {
+          if (vigente) setNovedadesPendientes(r.pendientes);
+        })
+        .catch(() => {
+          // Si falla, el menú queda sin indicador: no es motivo para molestar al usuario.
+        });
+    };
+    refrescar();
+    window.addEventListener(EVENTO_NOVEDADES, refrescar);
+    return () => {
+      vigente = false;
+      window.removeEventListener(EVENTO_NOVEDADES, refrescar);
+    };
+  }, [location.pathname]);
 
   return (
     <div className="flex min-h-screen bg-structural-black">
@@ -46,6 +71,14 @@ export function Layout() {
                     <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-silver via-silver-deep to-silver" />
                   )}
                   {s.etiqueta}
+                  {s.ruta === '/novedades' && novedadesPendientes > 0 && (
+                    <span
+                      className="ml-2 min-w-5 rounded-sharp border border-warning px-1.5 text-center font-mono text-[10px] leading-5 text-warning"
+                      aria-label={`${novedadesPendientes} novedades pendientes`}
+                    >
+                      {novedadesPendientes}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>

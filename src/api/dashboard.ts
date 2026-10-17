@@ -19,6 +19,7 @@ export interface Dashboard {
     proximas: TareaProxima[];
   };
   expedientesActivos: number;
+  novedadesPendientes: number;
 }
 
 export const api = {

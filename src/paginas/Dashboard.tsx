@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { api, type Dashboard as DashboardData } from '../api/dashboard';
+import { api as novedadesApi, type Novedad } from '../api/novedades';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -22,6 +23,7 @@ export function Dashboard() {
   const [datos, setDatos] = useState<DashboardData | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [novedades, setNovedades] = useState<Novedad[]>([]);
 
   useEffect(() => {
     setCargando(true);
@@ -31,6 +33,11 @@ export function Dashboard() {
       .then(setDatos)
       .catch((e: Error) => setError(e.message))
       .finally(() => setCargando(false));
+    // Las últimas novedades son un agregado: si no cargan, el resto del panel se muestra igual.
+    novedadesApi
+      .listarNovedades({ estado: 'pendientes', limit: 5 })
+      .then((r) => setNovedades(r.novedades))
+      .catch(() => setNovedades([]));
   }, []);
 
   return (
@@ -45,12 +52,34 @@ export function Dashboard() {
         </div>
       ) : datos ? (
         <div className="flex flex-col gap-10">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <StatCard etiqueta="Novedades pendientes" valor={datos.novedadesPendientes} to="/novedades" />
             <StatCard etiqueta="Expedientes activos" valor={datos.expedientesActivos} />
             <StatCard etiqueta="Tareas pendientes" valor={datos.tareasPendientes.total} />
             <StatCard etiqueta="Próximas audiencias" valor={datos.proximasAudiencias.length} />
             <StatCard etiqueta="Vencimientos próximos" valor={datos.vencimientosProximos.length} />
           </div>
+
+          <Seccion titulo="Novedades del portal sin revisar">
+            {novedades.length === 0 ? (
+              <EmptyState message="No hay novedades pendientes de revisar." />
+            ) : (
+              <>
+                {novedades.map((n) => (
+                  <FilaDashboard
+                    key={n.id}
+                    to="/novedades"
+                    titulo={n.tipo ?? 'Notificación del portal'}
+                    subtitulo={`${n.numero_causa} · ${n.caratula ?? ''}`}
+                    fecha={n.fecha_notificacion}
+                  />
+                ))}
+                <Link to="/novedades" className="inline-block mt-3 text-xs text-text-gray-light hover:text-white">
+                  Ver todas las novedades
+                </Link>
+              </>
+            )}
+          </Seccion>
 
           <Seccion titulo="Próximas audiencias">
             {datos.proximasAudiencias.length === 0 ? (
@@ -124,12 +153,20 @@ export function Dashboard() {
   );
 }
 
-function StatCard({ etiqueta, valor }: { etiqueta: string; valor: number }) {
-  return (
-    <div className="border border-line rounded-sharp bg-graphite p-4">
+function StatCard({ etiqueta, valor, to }: { etiqueta: string; valor: number; to?: string }) {
+  const contenido = (
+    <>
       <div className="text-2xl font-black text-white">{valor}</div>
       <div className="text-xs text-text-gray-light mt-1">{etiqueta}</div>
-    </div>
+    </>
+  );
+  const clases = 'border border-line rounded-sharp bg-graphite p-4';
+  return to ? (
+    <Link to={to} className={`${clases} block hover:border-silver transition-colors`}>
+      {contenido}
+    </Link>
+  ) : (
+    <div className={clases}>{contenido}</div>
   );
 }
 
