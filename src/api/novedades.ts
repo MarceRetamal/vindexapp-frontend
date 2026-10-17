@@ -84,7 +84,7 @@ export const api = {
       body: JSON.stringify({ revisada }),
     }),
 
-  marcarRevisadas: (cuerpo: { ids: string[] } | { hasta_fecha_notificacion: string }) =>
+  marcarRevisadas: (cuerpo: { ids: string[] } | { hasta_fecha_notificacion: string } | { todas: true }) =>
     pedido<{ marcadas: number }>('/novedades/marcar-revisadas', {
       method: 'POST',
       body: JSON.stringify(cuerpo),
