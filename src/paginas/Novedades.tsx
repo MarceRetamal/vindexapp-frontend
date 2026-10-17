@@ -270,7 +270,7 @@ function FilaNovedad({
             {revisada && novedad.revisada_en !== null && <> · Revisada {formatearMarca(novedad.revisada_en)}</>}
           </div>
           {!abierta && novedad.texto_extracto && (
-            <p className="text-sm text-silver mt-1 line-clamp-2 whitespace-pre-line">{novedad.texto_extracto}</p>
+            <p className="text-sm text-silver mt-1 line-clamp-2">{novedad.texto_extracto.replace(/\s+/g, ' ').trim()}</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
