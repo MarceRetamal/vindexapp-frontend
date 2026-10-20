@@ -16,7 +16,7 @@ export async function pedido<T>(ruta: string, opciones?: RequestInit): Promise<T
 
   if (!resp.ok) {
     const cuerpo = await resp.json().catch(() => ({}));
-    throw new Error(cuerpo.error ?? `Error ${resp.status} al llamar a ${ruta}`);
+    throw Object.assign(new Error(cuerpo.error ?? `Error ${resp.status} al llamar a ${ruta}`), { cuerpo });
   }
 
   return resp.json();
