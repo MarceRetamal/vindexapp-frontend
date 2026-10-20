@@ -7,6 +7,7 @@ import {
   type Novedad,
   type NovedadDetalle,
 } from '../api/novedades';
+import { api as apiAlertas, mensajeDeError, type EstadoWhatsApp } from '../api/alertas';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { EstadoBadge } from '../componentes/EstadoBadge';
@@ -178,6 +179,8 @@ export function Novedades() {
         />
       </div>
 
+      <AvisosWhatsApp onError={setError} onAviso={setAviso} />
+
       <AccionesEnBloque pendientes={estado === 'pendientes' ? lista : []} onMarcadas={alMarcarEnBloque} onError={setError} />
 
       {aviso && (
@@ -336,6 +339,62 @@ function FilaNovedad({
         </div>
       )}
     </motion.article>
+  );
+}
+
+function AvisosWhatsApp({
+  onError,
+  onAviso,
+}: {
+  onError: (mensaje: string | null) => void;
+  onAviso: (mensaje: string | null) => void;
+}) {
+  const [estado, setEstado] = useState<EstadoWhatsApp | null>(null);
+  const [fallo, setFallo] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    apiAlertas
+      .obtenerEstado()
+      .then((r) => setEstado(r.whatsapp))
+      .catch(() => setFallo(true));
+  }, []);
+
+  async function probar() {
+    if (!window.confirm('Se enviará un WhatsApp de prueba al número configurado, con la cantidad actual de novedades pendientes. ¿Seguimos?')) return;
+    setEnviando(true);
+    onError(null);
+    onAviso(null);
+    try {
+      const r = await apiAlertas.enviarPrueba();
+      onAviso(`Aviso de prueba enviado (${r.pendientes} pendientes). Revisá tu WhatsApp.`);
+    } catch (e) {
+      onError(mensajeDeError(e));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const listo = estado !== null && estado.configurado && estado.estudio_correcto;
+  const texto = fallo
+    ? 'No se pudo consultar el estado de los avisos por WhatsApp.'
+    : estado === null
+      ? 'Consultando los avisos por WhatsApp…'
+      : listo
+        ? 'Avisos por WhatsApp activos: te avisamos cuando llegan novedades nuevas, de 8 a 22 hs.'
+        : estado.configurado
+          ? 'Los avisos por WhatsApp no están habilitados para este estudio.'
+          : `Avisos por WhatsApp sin configurar. Falta: ${estado.faltan.join(', ')}.`;
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
+      <span>{texto}</span>
+      {listo && (
+        <Button variant="ghost" size="sm" onClick={probar} disabled={enviando} className={botonClases}>
+          {enviando ? 'Enviando…' : 'Enviar aviso de prueba'}
+        </Button>
+      )}
+    </div>
   );
 }
 
