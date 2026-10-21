@@ -36,4 +36,7 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
     }),
+
+  eliminarAudiencia: (id: string) =>
+    pedido<{ id: string; eliminado: true }>(`/audiencias/${id}`, { method: 'DELETE' }),
 };

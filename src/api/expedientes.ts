@@ -69,4 +69,10 @@ export const api = {
     pedido<Expediente>(`/expedientes/${id}/reactivar?estudio_id=${ESTUDIO_ID}`, {
       method: 'PATCH',
     }),
+
+  /** Con `conContenido` borra también todo lo que cuelga del expediente (la API lo exige como confirmación). */
+  eliminarExpediente: (id: string, conContenido = false) =>
+    pedido<{ id: string; eliminado: true }>(`/expedientes/${id}${conContenido ? '?con_contenido=1' : ''}`, {
+      method: 'DELETE',
+    }),
 };

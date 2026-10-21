@@ -7,6 +7,7 @@ import { Row } from '../componentes/Row';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+import { BotonEliminar } from '../componentes/BotonEliminar';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
@@ -159,6 +160,12 @@ function FilaAudiencia({
                 </Button>
               </>
             )}
+            <BotonEliminar
+              descripcion={`la audiencia "${audiencia.tipo}" del ${audiencia.fecha}`}
+              eliminar={() => api.eliminarAudiencia(audiencia.id)}
+              alEliminar={onCambiado}
+              alFallar={setError}
+            />
             <EstadoBadge
               estado={audiencia.estado}
               colorMap={{

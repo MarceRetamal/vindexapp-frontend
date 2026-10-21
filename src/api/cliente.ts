@@ -44,4 +44,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(datos),
     }),
+
+  /** Con `conContenido` borra también todo lo que cuelga del cliente (la API lo exige como confirmación). */
+  eliminarCliente: (id: string, conContenido = false) =>
+    pedido<{ id: string; eliminado: true }>(`/clientes/${id}${conContenido ? '?con_contenido=1' : ''}`, {
+      method: 'DELETE',
+    }),
 };

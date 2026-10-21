@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { api, type Cliente } from '../api/cliente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
+import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -9,6 +10,8 @@ import { ListSkeleton } from '../componentes/ListSkeleton';
 
 export function ClienteDetalle() {
   const { id } = useParams<{ id: string }>();
+  const navegar = useNavigate();
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,11 +73,24 @@ export function ClienteDetalle() {
             {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
           </p>
         </div>
-        <EstadoBadge
-          estado={cliente.estado}
-          colorMap={{ Activo: 'success', Potencial: 'warning', Inactivo: 'neutral' }}
-        />
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <EstadoBadge
+            estado={cliente.estado}
+            colorMap={{ Activo: 'success', Potencial: 'warning', Inactivo: 'neutral' }}
+          />
+          <BotonEliminar
+            etiqueta="Eliminar cliente"
+            descripcion={`el cliente ${cliente.apellido}, ${cliente.nombre}`}
+            tituloConContenido="Eliminar cliente con todo su contenido"
+            alternativa="Si solo querés dejar de verlo en la lista de activos, es mejor pasarlo a estado Inactivo: no se pierde nada."
+            eliminar={(conContenido) => api.eliminarCliente(cliente.id, conContenido)}
+            alEliminar={() => navegar('/clientes')}
+            alFallar={setErrorEliminar}
+          />
+        </div>
       </header>
+
+      {errorEliminar && <ErrorBanner message={errorEliminar} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6">

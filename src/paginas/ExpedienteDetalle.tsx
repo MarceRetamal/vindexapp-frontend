@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { api as apiExpedientes, type Expediente } from '../api/expedientes';
 import { api as apiActuaciones, type Actuacion } from '../api/actuaciones';
 import { api as apiTareas, type Tarea } from '../api/tareas';
+import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { EmptyState } from '../componentes/EmptyState';
@@ -38,6 +39,8 @@ function fechaISOVencida(fechaISO: string): boolean {
 
 export function ExpedienteDetalle() {
   const { id } = useParams<{ id: string }>();
+  const navegar = useNavigate();
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,11 +153,24 @@ export function ExpedienteDetalle() {
             {expediente.cliente_apellido}, {expediente.cliente_nombre}
           </p>
         </div>
-        <EstadoBadge
-          estado={expediente.estado}
-          colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
-        />
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <EstadoBadge
+            estado={expediente.estado}
+            colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
+          />
+          <BotonEliminar
+            etiqueta="Eliminar expediente"
+            descripcion={`el expediente "${expediente.caratula}"`}
+            tituloConContenido="Eliminar expediente con todo su contenido"
+            alternativa="Si el expediente terminó, conviene archivarlo (dar de baja) en vez de eliminarlo: queda guardado y se puede reactivar."
+            eliminar={(conContenido) => apiExpedientes.eliminarExpediente(expediente.id, conContenido)}
+            alEliminar={() => navegar('/expedientes')}
+            alFallar={setErrorEliminar}
+          />
+        </div>
       </header>
+
+      {errorEliminar && <ErrorBanner message={errorEliminar} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
@@ -183,7 +199,13 @@ export function ExpedienteDetalle() {
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
             >
               {actuaciones.map((actuacion) => (
-                <FilaActuacion key={actuacion.id} actuacion={actuacion} onNotificar={notificar} />
+                <FilaActuacion
+                  key={actuacion.id}
+                  actuacion={actuacion}
+                  onNotificar={notificar}
+                  onEliminada={cargarActuaciones}
+                  onError={setErrorEliminar}
+                />
               ))}
             </motion.div>
           )}
@@ -211,7 +233,7 @@ export function ExpedienteDetalle() {
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
             >
               {tareas.map((tarea) => (
-                <FilaTarea key={tarea.id} tarea={tarea} onCompletar={completarTarea} />
+                <FilaTarea key={tarea.id} tarea={tarea} onCompletar={completarTarea} onEliminada={cargarTareas} onError={setErrorEliminar} />
               ))}
             </motion.div>
           )}
@@ -283,9 +305,13 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
 function FilaActuacion({
   actuacion,
   onNotificar,
+  onEliminada,
+  onError,
 }: {
   actuacion: Actuacion;
   onNotificar: (id: string) => Promise<void>;
+  onEliminada: () => void;
+  onError: (mensaje: string) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
   const [notificando, setNotificando] = useState(false);
@@ -382,6 +408,15 @@ function FilaActuacion({
               {!actuacion.detalle_interno && !actuacion.texto_cliente && (
                 <p className="text-sm text-text-gray-light italic">Sin detalle cargado.</p>
               )}
+              <div className="flex justify-end pt-1">
+                <BotonEliminar
+                  etiqueta="Eliminar actuación"
+                  descripcion={`la actuación "${actuacion.tipo}"`}
+                  eliminar={() => apiActuaciones.eliminarActuacion(actuacion.id)}
+                  alEliminar={onEliminada}
+                  alFallar={onError}
+                />
+              </div>
             </div>
           </motion.div>
         )}
@@ -527,9 +562,13 @@ function FormularioNuevaActuacion({
 function FilaTarea({
   tarea,
   onCompletar,
+  onEliminada,
+  onError,
 }: {
   tarea: Tarea;
   onCompletar: (id: string) => Promise<void>;
+  onEliminada: () => void;
+  onError: (mensaje: string) => void;
 }) {
   const [completando, setCompletando] = useState(false);
   const completada = tarea.estado === 'Completada';
@@ -583,6 +622,12 @@ function FilaTarea({
           </span>
         )}
       </div>
+      <BotonEliminar
+        descripcion={`la tarea "${tarea.titulo}"`}
+        eliminar={() => apiTareas.eliminarTarea(tarea.id)}
+        alEliminar={onEliminada}
+        alFallar={onError}
+      />
     </motion.div>
   );
 }
