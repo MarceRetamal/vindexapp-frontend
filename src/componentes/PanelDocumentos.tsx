@@ -185,7 +185,7 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
   return (
     <section className="mt-8">
       <div className="flex items-baseline justify-between mb-3">
-        <h2 className="text-lg font-bold text-white">Documentos</h2>
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Documentos</h2>
         <div className="flex items-center gap-3">
           {total > 0 && (
             <span className="text-xs text-text-gray-light font-mono">

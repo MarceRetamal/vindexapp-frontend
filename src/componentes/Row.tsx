@@ -18,7 +18,7 @@ export function Row({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-4 py-4 border-b border-line group"
+      className="flex items-center gap-4 py-4 border-b border-line group transition-colors hover:bg-white/[0.02]"
     >
       <span className="font-mono text-xs text-silver-deep border border-line rounded-sharp w-8 h-8 flex items-center justify-center shrink-0 group-hover:border-silver transition-colors">
         {String(index).padStart(2, '0')}

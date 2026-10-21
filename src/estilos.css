@@ -11,12 +11,16 @@
   --color-text-gray-light: #6B7280;
   --color-line: #2A2E36;
 
+  /* Colores funcionales de estado. No forman parte de la paleta del manual de marca (que no los define):
+     el de atención es un terracota apagado, a propósito, porque el manual prohíbe el dorado como acento. */
   --color-success: #6B8F71;
-  --color-warning: #B08D57;
+  --color-warning: #C0694B;
   --color-neutral-negative: #8B929C;
 
   --font-sans: "Lato", -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Lato es la única familia de marca. Las clases font-mono (fechas, cifras, códigos) se resuelven con Lato
+     y cifras tabulares, para que las columnas de números alineen sin sumar otra tipografía. */
+  --font-mono: "Lato", -apple-system, sans-serif;
   --font-heading: "Lato", -apple-system, sans-serif;
 
   --radius-sharp: 0.125rem;
@@ -29,6 +33,10 @@ html, body, #root {
   margin: 0;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   background: var(--color-structural-black);
   color: var(--color-white);
@@ -36,7 +44,33 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+.font-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.02em;
+}
+
+::selection {
+  background: var(--color-silver);
+  color: var(--color-structural-black);
+}
+
+/* Barras de desplazamiento finas, en la paleta. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-silver-deep); }
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.aparecer { animation: aparecer 0.5s ease-out both; }
 
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: 14px; }

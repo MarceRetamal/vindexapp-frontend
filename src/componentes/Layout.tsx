@@ -2,9 +2,9 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
-import logo from '@/assets/vindex-isologo.png';
 import { api as novedadesApi, EVENTO_NOVEDADES } from '../api/novedades';
 import { ErrorBoundary } from './ErrorBoundary';
+import { Isotipo, Wordmark } from './Marca';
 
 const SECCIONES = [
   { ruta: '/', etiqueta: 'Inicio' },
@@ -45,23 +45,29 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen bg-structural-black">
-      <aside className="w-[220px] shrink-0 border-r border-line bg-graphite">
-        <div className="px-6 py-8">
-          <img src={logo} alt="VINDEX LEGAL" className="w-full max-w-[176px]" />
-          <p className="mt-3 font-mono text-[10px] tracking-[0.2em] text-text-gray-light uppercase">
+      <aside className="w-[232px] shrink-0 border-r border-line bg-structural-black flex flex-col">
+        <div className="px-6 pt-9 pb-7">
+          <div className="flex items-center gap-3.5">
+            <Isotipo tamano={44} />
+            <Wordmark />
+          </div>
+          <div className="mt-7 h-px bg-line" />
+          <p className="mt-3 text-[10px] font-normal tracking-[0.28em] text-silver-deep uppercase">
             Gestión interna
           </p>
         </div>
 
-        <nav className="flex flex-col gap-0.5">
+        <nav className="flex flex-col gap-0.5 flex-1">
           {SECCIONES.map((s) => (
             <NavLink
               key={s.ruta}
               to={s.ruta}
               end={s.ruta === '/'}
               className={({ isActive }) =>
-                `relative flex items-center px-6 py-3 text-sm transition-colors ${
-                  isActive ? 'text-white font-bold' : 'text-text-gray-light hover:text-white'
+                `relative flex items-center px-6 py-3 text-[13px] uppercase tracking-[0.12em] transition-colors ${
+                  isActive
+                    ? 'text-white font-bold bg-white/[0.03]'
+                    : 'text-silver-deep font-normal hover:text-white hover:bg-white/[0.02]'
                 }`
               }
             >
@@ -84,9 +90,16 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="px-6 py-6 border-t border-line">
+          <p className="text-[10px] font-normal tracking-[0.22em] text-silver-deep uppercase">
+            Estudio jurídico
+          </p>
+          <p className="mt-1 text-[10px] font-normal tracking-[0.22em] text-text-gray-light uppercase">La Plata</p>
+        </div>
       </aside>
 
-      <main className="flex-1 max-w-[1100px] px-10 py-8">
+      <main className="flex-1 min-w-0 max-w-[1100px] px-12 py-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

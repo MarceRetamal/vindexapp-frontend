@@ -6,6 +6,7 @@ import { api as novedadesApi, type Novedad } from '../api/novedades';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+import { Filete } from '../componentes/Filete';
 
 function formatearFechaISO(fechaISO: string): string {
   const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
@@ -42,7 +43,8 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-black uppercase tracking-wide text-white mb-8">Inicio</h1>
+      <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Inicio</h1>
+      <Filete className="mt-5 mb-9" />
 
       {error && <ErrorBanner message={`No se pudo cargar el panel: ${error}`} />}
 
@@ -156,11 +158,11 @@ export function Dashboard() {
 function StatCard({ etiqueta, valor, to }: { etiqueta: string; valor: number; to?: string }) {
   const contenido = (
     <>
-      <div className="text-2xl font-black text-white">{valor}</div>
-      <div className="text-xs text-text-gray-light mt-1">{etiqueta}</div>
+      <div className="text-3xl font-light tabular-nums text-white">{valor}</div>
+      <div className="text-[10px] font-normal uppercase tracking-[0.16em] text-silver-deep mt-2">{etiqueta}</div>
     </>
   );
-  const clases = 'border border-line rounded-sharp bg-graphite p-4';
+  const clases = 'border border-line rounded-sharp bg-graphite p-5';
   return to ? (
     <Link to={to} className={`${clases} block hover:border-silver transition-colors`}>
       {contenido}
@@ -173,7 +175,10 @@ function StatCard({ etiqueta, valor, to }: { etiqueta: string; valor: number; to
 function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-lg font-bold text-white mb-3">{titulo}</h2>
+      <h2 className="mb-3 flex items-center gap-4 text-xs font-bold uppercase tracking-[0.2em] text-silver">
+        {titulo}
+        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+      </h2>
       {children}
     </section>
   );

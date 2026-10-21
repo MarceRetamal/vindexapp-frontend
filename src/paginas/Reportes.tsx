@@ -5,6 +5,7 @@ import { api, type ReporteExpedientes, type ReportePresupuestos } from '../api/r
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+import { Filete } from '../componentes/Filete';
 
 const formateadorPesos = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -29,7 +30,8 @@ function hoyISO(): string {
 export function Reportes() {
   return (
     <div>
-      <h1 className="text-2xl font-black uppercase tracking-wide text-white mb-8">Reportes</h1>
+      <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Reportes</h1>
+      <Filete className="mt-5 mb-9" />
 
       <div className="flex flex-col gap-12">
         <SeccionExpedientes />
@@ -56,7 +58,7 @@ function SeccionExpedientes() {
 
   return (
     <section>
-      <h2 className="text-lg font-bold text-white mb-4">Expedientes</h2>
+      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver mb-4">Expedientes</h2>
 
       {error && <ErrorBanner message={`No se pudo cargar el reporte: ${error}`} />}
 
@@ -127,7 +129,7 @@ function SeccionPresupuestos() {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
-        <h2 className="text-lg font-bold text-white">Presupuestos</h2>
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Presupuestos</h2>
         <div className="flex items-center gap-2 text-xs text-text-gray-light">
           <label className="flex items-center gap-1.5">
             Desde
