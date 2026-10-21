@@ -8,6 +8,7 @@ import { Row } from '../componentes/Row';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+import { BotonEliminar } from '../componentes/BotonEliminar';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
@@ -227,6 +228,16 @@ function FilaPresupuesto({
                   Eliminar
                 </Button>
               </>
+            )}
+            {esFinal && (
+              <BotonEliminar
+                descripcion={`el presupuesto firmado "${presupuesto.concepto}"`}
+                tituloConContenido="Eliminar presupuesto firmado"
+                textoConfirmacion="Este presupuesto está firmado. Si seguís, se elimina definitivamente el registro del presupuesto. El cliente y el expediente vinculados NO se borran (si también fueron un error, eliminalos desde sus fichas) y el PDF, si existe, sigue en Documentos."
+                eliminar={(confirmado) => api.eliminarPresupuesto(presupuesto.id, confirmado)}
+                alEliminar={onCambiado}
+                alFallar={setError}
+              />
             )}
             <EstadoBadge
               estado={presupuesto.estado}

@@ -45,8 +45,9 @@ export const api = {
       body: JSON.stringify(datos),
     }),
 
-  eliminarPresupuesto: (id: string) =>
-    pedido<{ id: string; eliminado: boolean }>(`/presupuestos/${id}`, {
+  /** Un presupuesto firmado solo se elimina con `confirmarFirmado` (la API lo exige y pide rol titular). */
+  eliminarPresupuesto: (id: string, confirmarFirmado = false) =>
+    pedido<{ id: string; eliminado: boolean }>(`/presupuestos/${id}${confirmarFirmado ? '?confirmar_firmado=1' : ''}`, {
       method: 'DELETE',
     }),
 
