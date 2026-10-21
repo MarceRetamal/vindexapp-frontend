@@ -14,6 +14,7 @@ import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
+import { Filete } from '../componentes/Filete';
 
 const POR_PAGINA = 50;
 
@@ -134,10 +135,10 @@ export function Novedades() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-black uppercase tracking-wide text-white">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">
           Novedades{' '}
-          <span className="text-text-gray-light font-normal normal-case tracking-normal">
+          <span className="text-text-gray-light font-light normal-case tracking-normal tabular-nums">
             ({total} {estado === 'pendientes' ? 'pendientes' : estado === 'revisadas' ? 'revisadas' : 'en total'})
           </span>
         </h1>
@@ -151,6 +152,7 @@ export function Novedades() {
           </Button>
         )}
       </div>
+      <Filete className="mt-5 mb-7" />
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex gap-1" role="tablist" aria-label="Estado de las novedades">

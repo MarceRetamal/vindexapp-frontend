@@ -9,6 +9,7 @@ import { RouterProvider } from 'react-router';
 import { router } from './rutas';
 import { whoami } from './api/whoami';
 import { setEstudioId } from './api/http';
+import { PantallaMarca } from './componentes/Marca';
 import './estilos.css';
 
 function Arranque() {
@@ -28,16 +29,11 @@ function Arranque() {
   }, []);
 
   if (estado === 'cargando') {
-    return <div style={{ padding: 40 }}>Verificando sesión...</div>;
+    return <PantallaMarca titulo="Verificando sesión" />;
   }
 
   if (estado === 'error') {
-    return (
-      <div style={{ padding: 40 }}>
-        <h2>No se pudo iniciar sesión</h2>
-        <p>{error}</p>
-      </div>
-    );
+    return <PantallaMarca titulo="No se pudo iniciar sesión" detalle={error} />;
   }
 
   return <RouterProvider router={router} />;

@@ -146,7 +146,7 @@ export function ExpedienteDetalle() {
 
       <header className="flex items-start justify-between gap-4 mt-4 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black uppercase tracking-wide text-white break-words">
+          <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white break-words">
             {expediente.caratula}
           </h1>
           <p className="text-sm text-text-gray-light mt-1">
@@ -175,7 +175,7 @@ export function ExpedienteDetalle() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-white">Actuaciones</h2>
+            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Actuaciones</h2>
             <Button
               onClick={() => setMostrarFormulario(true)}
               className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
@@ -211,7 +211,7 @@ export function ExpedienteDetalle() {
           )}
 
           <div className="flex items-center justify-between mb-3 mt-8">
-            <h2 className="text-lg font-bold text-white">Tareas</h2>
+            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Tareas</h2>
             <Button
               onClick={() => setMostrarFormularioTarea(true)}
               className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
@@ -241,7 +241,7 @@ export function ExpedienteDetalle() {
 
         <div className="flex flex-col gap-6">
           <section className="border border-line rounded-sharp bg-graphite p-4">
-            <h2 className="text-sm font-bold text-white mb-3 uppercase tracking-wide">Datos</h2>
+            <h2 className="text-xs font-bold text-silver mb-3 uppercase tracking-[0.2em]">Datos</h2>
             <div className="flex flex-col gap-3">
               <Dato etiqueta="Número" valor={expediente.numero} />
               <Dato etiqueta="Fuero" valor={expediente.fuero} />

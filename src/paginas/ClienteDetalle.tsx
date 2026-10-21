@@ -66,7 +66,7 @@ export function ClienteDetalle() {
 
       <header className="flex items-start justify-between gap-4 mt-4 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black uppercase tracking-wide text-white break-words">
+          <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white break-words">
             {cliente.apellido}, {cliente.nombre}
           </h1>
           <p className="text-sm text-text-gray-light mt-1">
@@ -95,7 +95,7 @@ export function ClienteDetalle() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6">
           <section className="border border-line rounded-sharp bg-graphite p-4">
-            <h2 className="text-sm font-bold text-white mb-3 uppercase tracking-wide">Datos de contacto</h2>
+            <h2 className="text-xs font-bold text-silver mb-3 uppercase tracking-[0.2em]">Datos de contacto</h2>
             {sinDatos ? (
               <EmptyState message="Todavía no se cargaron datos de contacto para este cliente." />
             ) : (

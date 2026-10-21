@@ -3,6 +3,7 @@ import { api, type ResultadoLiquidacion, type TipoExtincion } from '../api/liqui
 import { Input } from '@/componentes/ui/input';
 import { Button } from '@/componentes/ui/button';
 import { ErrorBanner } from '@/componentes/ErrorBanner';
+import { Filete } from '../componentes/Filete';
 
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
@@ -78,7 +79,8 @@ export function Liquidaciones() {
   return (
     <div>
       <header className="mb-7">
-        <h1 className="text-2xl font-black uppercase tracking-wide text-white">Liquidaciones</h1>
+        <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Liquidaciones</h1>
+        <Filete className="mt-5 mb-4" />
         <p className="text-text-gray-light text-sm mt-1">
           Casas particulares (Ley 26.844) — despido sin causa o indirecto.
           Los regímenes de LCT y Construcción todavía no están disponibles.
