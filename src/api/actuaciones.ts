@@ -50,4 +50,7 @@ export const api = {
     pedido<ActuacionConVencimiento[]>(
       `/actuaciones/vencimientos-proximos?estudio_id=${ESTUDIO_ID}${dias ? `&dias=${dias}` : ''}`
     ),
+
+  eliminarActuacion: (id: string) =>
+    pedido<{ id: string; eliminado: true }>(`/actuaciones/${id}`, { method: 'DELETE' }),
 };
