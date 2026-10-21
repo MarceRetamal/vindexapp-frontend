@@ -8,15 +8,20 @@ export type Vinculados = Record<string, number>;
 
 const PALABRA_CONFIRMACION = 'ELIMINAR';
 
-/** Si el error vino de un 409 de la API con el detalle de lo vinculado, lo devuelve. */
-function vinculadosDelError(e: unknown): Vinculados | null {
-  const cuerpo = (e as { cuerpo?: { vinculados?: unknown } } | null)?.cuerpo;
+/**
+ * Si el error vino de un 409 de la API que pide una confirmación más fuerte, lo informa: con el detalle de lo
+ * vinculado (clientes y expedientes) o solo con la bandera `requiere_confirmacion` (presupuestos firmados).
+ */
+function confirmacionPedida(e: unknown): { vinculados: Vinculados | null } | null {
+  const cuerpo = (e as { cuerpo?: { vinculados?: unknown; requiere_confirmacion?: unknown } } | null)?.cuerpo;
   const v = cuerpo?.vinculados;
-  if (v === null || typeof v !== 'object') return null;
-  const entradas = Object.entries(v as Record<string, unknown>).filter(
-    (par): par is [string, number] => typeof par[1] === 'number' && par[1] > 0,
-  );
-  return entradas.length > 0 ? Object.fromEntries(entradas) : null;
+  if (v !== null && typeof v === 'object') {
+    const entradas = Object.entries(v as Record<string, unknown>).filter(
+      (par): par is [string, number] => typeof par[1] === 'number' && par[1] > 0,
+    );
+    if (entradas.length > 0) return { vinculados: Object.fromEntries(entradas) };
+  }
+  return cuerpo?.requiere_confirmacion === true ? { vinculados: null } : null;
 }
 
 const claseBoton = 'rounded-sharp border border-line text-text-gray-light hover:text-warning hover:border-warning';
@@ -33,6 +38,7 @@ export function BotonEliminar({
   descripcion,
   tituloConContenido,
   alternativa,
+  textoConfirmacion,
   eliminar,
   alEliminar,
   alFallar,
@@ -45,6 +51,8 @@ export function BotonEliminar({
   tituloConContenido?: string;
   /** Texto con la salida reversible (archivar, pasar a inactivo), si existe. */
   alternativa?: string;
+  /** Explicación para la confirmación fuerte cuando no hay lista de registros vinculados. */
+  textoConfirmacion?: string;
   /** Ejecuta el borrado. `conContenido` es true solo después de la confirmación fuerte. */
   eliminar: (conContenido: boolean) => Promise<unknown>;
   alEliminar: () => void;
@@ -53,6 +61,7 @@ export function BotonEliminar({
   className?: string;
 }) {
   const [procesando, setProcesando] = useState(false);
+  const [abierto, setAbierto] = useState(false);
   const [vinculados, setVinculados] = useState<Vinculados | null>(null);
   const [escrito, setEscrito] = useState('');
   const [errorDialogo, setErrorDialogo] = useState<string | null>(null);
@@ -71,11 +80,12 @@ export function BotonEliminar({
       await eliminar(false);
       alEliminar();
     } catch (err) {
-      const hallados = vinculadosDelError(err);
-      if (hallados) {
+      const pedida = confirmacionPedida(err);
+      if (pedida) {
         setEscrito('');
         setErrorDialogo(null);
-        setVinculados(hallados);
+        setVinculados(pedida.vinculados);
+        setAbierto(true);
       } else {
         informar(err instanceof Error ? err.message : `No se pudo eliminar ${descripcion}.`);
       }
@@ -89,7 +99,7 @@ export function BotonEliminar({
     setErrorDialogo(null);
     try {
       await eliminar(true);
-      setVinculados(null);
+      setAbierto(false);
       alEliminar();
     } catch (err) {
       setErrorDialogo(err instanceof Error ? err.message : `No se pudo eliminar ${descripcion}.`);
@@ -100,6 +110,7 @@ export function BotonEliminar({
 
   function cerrar() {
     if (procesando) return;
+    setAbierto(false);
     setVinculados(null);
     setEscrito('');
     setErrorDialogo(null);
@@ -115,27 +126,35 @@ export function BotonEliminar({
         disabled={procesando}
         className={className ?? claseBoton}
       >
-        {procesando && !vinculados ? 'Eliminando…' : etiqueta}
+        {procesando && !abierto ? 'Eliminando…' : etiqueta}
       </Button>
 
-      <Dialog open={vinculados !== null} onOpenChange={(abierto) => !abierto && cerrar()}>
+      <Dialog open={abierto} onOpenChange={(estaAbierto) => !estaAbierto && cerrar()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{tituloConContenido ?? 'Eliminar con todo su contenido'}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3 text-sm text-white">
-            <p>
-              {descripcion.charAt(0).toUpperCase() + descripcion.slice(1)} tiene datos vinculados. Si seguís, se
-              eliminan <strong>definitivamente</strong>, junto con los archivos, y no hay forma de recuperarlos:
-            </p>
-            <ul className="list-disc pl-5 text-text-gray-light">
-              {vinculados &&
-                Object.entries(vinculados).map(([categoria, total]) => (
-                  <li key={categoria}>
-                    {total} {categoria}
-                  </li>
-                ))}
-            </ul>
+            {vinculados ? (
+              <>
+                <p>
+                  {descripcion.charAt(0).toUpperCase() + descripcion.slice(1)} tiene datos vinculados. Si seguís, se
+                  eliminan <strong>definitivamente</strong>, junto con los archivos, y no hay forma de recuperarlos:
+                </p>
+                <ul className="list-disc pl-5 text-text-gray-light">
+                  {Object.entries(vinculados).map(([categoria, total]) => (
+                    <li key={categoria}>
+                      {total} {categoria}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>
+                {textoConfirmacion ??
+                  `Para eliminar ${descripcion} hace falta una confirmación expresa. No hay forma de recuperarlo.`}
+              </p>
+            )}
             {alternativa && <p className="text-text-gray-light">{alternativa}</p>}
             <label htmlFor="confirmar-eliminacion" className="text-xs text-text-gray-light">
               Para confirmar, escribí {PALABRA_CONFIRMACION}
@@ -156,7 +175,7 @@ export function BotonEliminar({
               disabled={procesando || escrito.trim().toUpperCase() !== PALABRA_CONFIRMACION}
               className="rounded-sharp bg-warning text-structural-black font-bold hover:brightness-110 disabled:opacity-50"
             >
-              {procesando ? 'Eliminando…' : 'Eliminar todo definitivamente'}
+              {procesando ? 'Eliminando…' : vinculados ? 'Eliminar todo definitivamente' : 'Eliminar definitivamente'}
             </Button>
             <Button
               type="button"
