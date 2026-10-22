@@ -8,6 +8,7 @@ import {
   type NovedadDetalle,
 } from '../api/novedades';
 import { api as apiAlertas, mensajeDeError, type EstadoWhatsApp } from '../api/alertas';
+import { api as apiPortal, type EstadoPortal } from '../api/portal';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { EstadoBadge } from '../componentes/EstadoBadge';
@@ -181,6 +182,7 @@ export function Novedades() {
         />
       </div>
 
+      <LecturaPortal onError={setError} onAviso={setAviso} onLeido={() => { avisarCambioNovedades(); cargar(); }} />
       <AvisosWhatsApp onError={setError} onAviso={setAviso} />
 
       <AccionesEnBloque pendientes={estado === 'pendientes' ? lista : []} onMarcadas={alMarcarEnBloque} onError={setError} />
@@ -341,6 +343,93 @@ function FilaNovedad({
         </div>
       )}
     </motion.article>
+  );
+}
+
+function hace(ms: number): string {
+  const minutos = Math.max(0, Math.round((Date.now() - ms) / 60_000));
+  if (minutos < 1) return 'hace instantes';
+  if (minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.round(minutos / 60);
+  return horas < 48 ? `hace ${horas} h` : `hace ${Math.round(horas / 24)} días`;
+}
+
+/**
+ * Estado de la lectura automática del Portal de Notificaciones (la hace el servidor, sin la computadora del
+ * abogado) y botón para leerlo ahora.
+ */
+function LecturaPortal({
+  onError,
+  onAviso,
+  onLeido,
+}: {
+  onError: (mensaje: string | null) => void;
+  onAviso: (mensaje: string | null) => void;
+  onLeido: () => void;
+}) {
+  const [estado, setEstado] = useState<EstadoPortal | null>(null);
+  const [fallo, setFallo] = useState(false);
+  const [leyendo, setLeyendo] = useState(false);
+
+  const consultar = useCallback(() => {
+    apiPortal
+      .obtenerEstado()
+      .then(setEstado)
+      .catch(() => setFallo(true));
+  }, []);
+
+  useEffect(consultar, [consultar]);
+
+  async function leerAhora() {
+    setLeyendo(true);
+    onError(null);
+    onAviso(null);
+    try {
+      const r = await apiPortal.sincronizar();
+      onAviso(
+        r.primera
+          ? `Primera lectura del portal: se guardaron ${r.nuevas} novedades de tus causas (quedan en la bandeja, sin aviso por WhatsApp).`
+          : r.nuevas === 0
+            ? 'Se leyó el portal: no hay novedades nuevas.'
+            : `Se leyó el portal: ${r.nuevas} novedades nuevas.`,
+      );
+      onLeido();
+    } catch (e) {
+      onError(mensajeDeError(e));
+    } finally {
+      setLeyendo(false);
+      consultar();
+    }
+  }
+
+  const listo = estado !== null && estado.configurado && estado.estudio_correcto;
+  const texto = fallo
+    ? 'No se pudo consultar el estado de la lectura automática del portal.'
+    : estado === null
+      ? 'Consultando la lectura automática del portal…'
+      : !estado.configurado
+        ? `Lectura automática del portal sin configurar. Falta: ${estado.faltan.join(', ')}.`
+        : !estado.estudio_correcto
+          ? 'La lectura automática del portal no está habilitada para este estudio.'
+          : estado.pausada
+            ? 'Lectura automática del portal PAUSADA: el portal rechazó la contraseña guardada. Actualizala y tocá "Leer el portal ahora".'
+            : estado.errores_consecutivos > 0
+              ? `Lectura automática del portal con problemas (${estado.errores_consecutivos} intentos fallidos)${estado.ultimo_error ? `: ${estado.ultimo_error}` : ''}${estado.ultimo_ok ? ` Última lectura buena ${hace(estado.ultimo_ok)}.` : ''}`
+              : estado.ultimo_ok
+                ? `Lectura automática del portal activa: última lectura ${hace(estado.ultimo_ok)} (${estado.ultimas_nuevas} nuevas).`
+                : estado.causas_importadas === 0
+                  ? 'Lectura automática del portal lista, pero todavía no hay causas importadas desde la extensión.'
+                  : 'Lectura automática del portal lista: todavía no hizo su primera lectura.';
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
+      <span>{texto}</span>
+      {listo && (
+        <Button variant="ghost" size="sm" onClick={leerAhora} disabled={leyendo} className={botonClases}>
+          {leyendo ? 'Leyendo el portal…' : 'Leer el portal ahora'}
+        </Button>
+      )}
+    </div>
   );
 }
 
