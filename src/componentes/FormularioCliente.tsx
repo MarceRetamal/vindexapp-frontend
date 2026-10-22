@@ -62,7 +62,7 @@ export function FormularioCliente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="cliente-nombre" className={etiquetaClases}>Nombre</label>
@@ -96,7 +96,7 @@ export function FormularioCliente({
         <label htmlFor="cliente-localidad" className={etiquetaClases}>Localidad</label>
         <Input id="cliente-localidad" className={campoClases} value={localidad} onChange={(e) => setLocalidad(e.target.value)} />
       </div>
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="cliente-notas" className={etiquetaClases}>Notas</label>
         <Textarea
           id="cliente-notas"
@@ -106,9 +106,9 @@ export function FormularioCliente({
         />
       </div>
 
-      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
+      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
 
-      <div className="col-span-2 flex gap-2">
+      <div className="sm:col-span-2 flex gap-2">
         <Button
           type="submit"
           disabled={enviando}

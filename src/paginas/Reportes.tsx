@@ -30,7 +30,7 @@ function hoyISO(): string {
 export function Reportes() {
   return (
     <div>
-      <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Reportes</h1>
+      <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Reportes</h1>
       <Filete className="mt-5 mb-9" />
 
       <div className="flex flex-col gap-12">

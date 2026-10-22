@@ -79,7 +79,7 @@ export function Liquidaciones() {
   return (
     <div>
       <header className="mb-7">
-        <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Liquidaciones</h1>
+        <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Liquidaciones</h1>
         <Filete className="mt-5 mb-4" />
         <p className="text-text-gray-light text-sm mt-1">
           Casas particulares (Ley 26.844) — despido sin causa o indirecto.
@@ -89,7 +89,7 @@ export function Liquidaciones() {
 
       <form
         onSubmit={enviar}
-        className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
+        className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
         <div className="flex flex-col gap-1">
           <label htmlFor="liq-fecha-ingreso" className={etiquetaClases}>
@@ -197,12 +197,12 @@ export function Liquidaciones() {
         )}
 
         {error && (
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <ErrorBanner message={error} />
           </div>
         )}
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Button
             type="submit"
             disabled={calculando}

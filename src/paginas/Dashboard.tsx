@@ -43,7 +43,7 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">Inicio</h1>
+      <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Inicio</h1>
       <Filete className="mt-5 mb-9" />
 
       {error && <ErrorBanner message={`No se pudo cargar el panel: ${error}`} />}
@@ -54,7 +54,7 @@ export function Dashboard() {
         </div>
       ) : datos ? (
         <div className="flex flex-col gap-10">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
             <StatCard etiqueta="Novedades pendientes" valor={datos.novedadesPendientes} to="/novedades" />
             <StatCard etiqueta="Expedientes activos" valor={datos.expedientesActivos} />
             <StatCard etiqueta="Tareas pendientes" valor={datos.tareasPendientes.total} />
@@ -159,10 +159,10 @@ function StatCard({ etiqueta, valor, to }: { etiqueta: string; valor: number; to
   const contenido = (
     <>
       <div className="text-3xl font-light tabular-nums text-white">{valor}</div>
-      <div className="text-[10px] font-normal uppercase tracking-[0.16em] text-silver-deep mt-2">{etiqueta}</div>
+      <div className="text-[10px] font-normal uppercase tracking-[0.12em] sm:tracking-[0.16em] text-silver-deep mt-2 break-words">{etiqueta}</div>
     </>
   );
-  const clases = 'border border-line rounded-sharp bg-graphite p-5';
+  const clases = 'min-w-0 border border-line rounded-sharp bg-graphite p-4 sm:p-5';
   return to ? (
     <Link to={to} className={`${clases} block hover:border-silver transition-colors`}>
       {contenido}

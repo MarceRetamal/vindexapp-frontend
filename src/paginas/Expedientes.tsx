@@ -236,9 +236,9 @@ function FormularioEditarExpediente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-4 mb-4 bg-graphite grid grid-cols-2 gap-3"
+      className="border border-line rounded-sharp p-4 mb-4 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor={`editar-${expediente.id}-caratula`} className={etiquetaClases}>Carátula</label>
         <Input id={`editar-${expediente.id}-caratula`} className={campoClases} value={caratula} onChange={(e) => setCaratula(e.target.value)} required />
       </div>
@@ -250,14 +250,14 @@ function FormularioEditarExpediente({
         <label htmlFor={`editar-${expediente.id}-fuero`} className={etiquetaClases}>Fuero</label>
         <Input id={`editar-${expediente.id}-fuero`} className={campoClases} value={fuero} onChange={(e) => setFuero(e.target.value)} />
       </div>
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor={`editar-${expediente.id}-juzgado`} className={etiquetaClases}>Juzgado</label>
         <Input id={`editar-${expediente.id}-juzgado`} className={campoClases} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
       </div>
 
-      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
+      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
 
-      <div className="col-span-2 flex gap-2">
+      <div className="sm:col-span-2 flex gap-2">
         <Button
           type="submit"
           disabled={enviando}
@@ -317,10 +317,10 @@ function FormularioNuevoExpediente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       {clientes.length === 0 && (
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <ErrorBanner message="Todavía no hay clientes cargados. Creá uno primero en la sección Clientes." />
         </div>
       )}
@@ -354,14 +354,14 @@ function FormularioNuevoExpediente({
         <label htmlFor="nuevo-expediente-fuero" className={etiquetaClases}>Fuero</label>
         <Input id="nuevo-expediente-fuero" className={campoClases} value={fuero} onChange={(e) => setFuero(e.target.value)} />
       </div>
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="nuevo-expediente-juzgado" className={etiquetaClases}>Juzgado</label>
         <Input id="nuevo-expediente-juzgado" className={campoClases} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
       </div>
 
-      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
+      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
 
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Button
           type="submit"
           disabled={enviando || clientes.length === 0}

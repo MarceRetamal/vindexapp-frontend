@@ -136,8 +136,8 @@ export function Novedades() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">
           Novedades{' '}
           <span className="text-text-gray-light font-light normal-case tracking-normal tabular-nums">
             ({total} {estado === 'pendientes' ? 'pendientes' : estado === 'revisadas' ? 'revisadas' : 'en total'})
@@ -178,7 +178,7 @@ export function Novedades() {
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por carátula, número, trámite o texto"
           aria-label="Buscar novedades"
-          className={`${campoClases} max-w-sm`}
+          className={`${campoClases} w-full sm:max-w-sm`}
         />
       </div>
 
@@ -280,7 +280,7 @@ function FilaNovedad({
       transition={{ duration: 0.2 }}
       className="py-4 border-b border-line"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-silver-deep border border-line rounded-sharp px-2 py-0.5">
@@ -304,7 +304,7 @@ function FilaNovedad({
             <p className="text-sm text-silver mt-1 line-clamp-2">{novedad.texto_extracto.replace(/\s+/g, ' ').trim()}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <Button variant="ghost" size="sm" onClick={alternarRevision} disabled={procesando} className={botonClases}>
             {revisada ? 'Volver a pendiente' : 'Marcar revisada'}
           </Button>

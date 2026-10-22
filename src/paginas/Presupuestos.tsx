@@ -333,7 +333,7 @@ function FormularioEditarPresupuesto({
     <form
       onSubmit={enviar}
       className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
-        necesitaContacto ? 'grid-cols-3' : 'grid-cols-2'
+        necesitaContacto ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
       }`}
     >
       <div className="flex flex-col gap-1">
@@ -420,7 +420,7 @@ function FormularioFirma({
     <form
       onSubmit={enviar}
       className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
-        necesitaCliente ? 'grid-cols-3' : 'grid-cols-1'
+        necesitaCliente ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'
       }`}
     >
       <div className="flex flex-col gap-1 col-span-full">
@@ -525,9 +525,9 @@ function FormularioNuevoPresupuesto({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
-      <div className="col-span-2 flex gap-4 text-sm text-white">
+      <div className="sm:col-span-2 flex gap-4 text-sm text-white">
         <label htmlFor="nuevo-presupuesto-cliente-existente" className="flex items-center gap-1.5 cursor-pointer">
           <input
             id="nuevo-presupuesto-cliente-existente"
@@ -551,7 +551,7 @@ function FormularioNuevoPresupuesto({
       </div>
 
       {usaClienteExistente ? (
-        <div className="flex flex-col gap-1 col-span-2">
+        <div className="flex flex-col gap-1 sm:col-span-2">
           <label htmlFor="nuevo-presupuesto-cliente" className={etiquetaClases}>Cliente</label>
           <select
             id="nuevo-presupuesto-cliente"
@@ -590,9 +590,9 @@ function FormularioNuevoPresupuesto({
         <Input id="nuevo-presupuesto-monto" type="number" min="0" step="0.01" className={campoClases} value={monto} onChange={(e) => setMonto(e.target.value)} required />
       </div>
 
-      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
+      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
 
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Button
           type="submit"
           disabled={enviando}
