@@ -386,12 +386,14 @@ function LecturaPortal({
     onAviso(null);
     try {
       const r = await apiPortal.sincronizar();
+      const propias = r.leidas - r.descartadas;
+      const yaGuardadas = Math.max(0, propias - r.nuevas);
       onAviso(
-        r.primera
-          ? `Primera lectura del portal: se guardaron ${r.nuevas} novedades de tus causas (quedan en la bandeja, sin aviso por WhatsApp).`
-          : r.nuevas === 0
-            ? 'Se leyó el portal: no hay novedades nuevas.'
-            : `Se leyó el portal: ${r.nuevas} novedades nuevas.`,
+        r.leidas === 0
+          ? 'Se leyó el portal, pero no devolvió ninguna notificación en los últimos 30 días. Si esperabas ver alguna, avisame.'
+          : propias === 0
+            ? `El portal devolvió ${r.leidas} notificaciones, pero ninguna es de tus causas importadas. Revisá la importación de causas con la extensión.`
+            : `Se leyó el portal: ${r.leidas} notificaciones, ${propias} de tus causas (${r.nuevas} nuevas, ${yaGuardadas} que ya estaban guardadas) y ${r.descartadas} de otras causas.${r.primera ? ' Es la primera lectura: lo nuevo queda en la bandeja sin aviso por WhatsApp.' : ''}`,
       );
       onLeido();
     } catch (e) {
@@ -416,7 +418,7 @@ function LecturaPortal({
             : estado.errores_consecutivos > 0
               ? `Lectura automática del portal con problemas (${estado.errores_consecutivos} intentos fallidos)${estado.ultimo_error ? `: ${estado.ultimo_error}` : ''}${estado.ultimo_ok ? ` Última lectura buena ${hace(estado.ultimo_ok)}.` : ''}`
               : estado.ultimo_ok
-                ? `Lectura automática del portal activa: última lectura ${hace(estado.ultimo_ok)} (${estado.ultimas_nuevas} nuevas).`
+                ? `Lectura automática del portal activa: última lectura ${hace(estado.ultimo_ok)} (${estado.ultimas_vistas} leídas, ${estado.ultimas_nuevas} nuevas).`
                 : estado.causas_importadas === 0
                   ? 'Lectura automática del portal lista, pero todavía no hay causas importadas desde la extensión.'
                   : 'Lectura automática del portal lista: todavía no hizo su primera lectura.';
