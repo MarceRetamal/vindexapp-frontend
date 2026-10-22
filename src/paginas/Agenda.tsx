@@ -239,15 +239,15 @@ function FormularioNuevaAudiencia({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-2 gap-3"
+      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       {expedientes.length === 0 && (
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <ErrorBanner message="Todavía no hay expedientes cargados. Creá uno primero en la sección Expedientes." />
         </div>
       )}
 
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="nueva-audiencia-expediente" className={etiquetaClases}>Expediente</label>
         <select
           id="nueva-audiencia-expediente"
@@ -298,14 +298,14 @@ function FormularioNuevaAudiencia({
         <label htmlFor="nueva-audiencia-hora" className={etiquetaClases}>Hora</label>
         <Input id="nueva-audiencia-hora" type="time" className={campoClases} value={hora} onChange={(e) => setHora(e.target.value)} />
       </div>
-      <div className="flex flex-col gap-1 col-span-2">
+      <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="nueva-audiencia-lugar" className={etiquetaClases}>Lugar</label>
         <Input id="nueva-audiencia-lugar" className={campoClases} value={lugar} onChange={(e) => setLugar(e.target.value)} />
       </div>
 
-      {error && <div className="col-span-2 text-warning text-sm">{error}</div>}
+      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
 
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Button
           type="submit"
           disabled={enviando || expedientes.length === 0}

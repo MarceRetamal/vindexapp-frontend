@@ -312,7 +312,7 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
 
           {!subiendo ? (
             <>
-              <div className="grid grid-cols-2 gap-2.5 mt-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3.5">
                 <label htmlFor="doc-categoria" className={etiquetaClases}>
                   Categoría
                   <select

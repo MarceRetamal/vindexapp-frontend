@@ -64,16 +64,16 @@ export function ClienteDetalle() {
     <div>
       <VolverAClientes />
 
-      <header className="flex items-start justify-between gap-4 mt-4 mb-8">
+      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-4 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white break-words">
+          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white break-words">
             {cliente.apellido}, {cliente.nombre}
           </h1>
           <p className="text-sm text-text-gray-light mt-1">
             {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <EstadoBadge
             estado={cliente.estado}
             colorMap={{ Activo: 'success', Potencial: 'warning', Inactivo: 'neutral' }}
@@ -99,7 +99,7 @@ export function ClienteDetalle() {
             {sinDatos ? (
               <EmptyState message="Todavía no se cargaron datos de contacto para este cliente." />
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Dato etiqueta="Domicilio" valor={cliente.domicilio} />
                 <Dato etiqueta="Localidad" valor={cliente.localidad} />
                 <Dato etiqueta="Teléfono fijo" valor={cliente.telefono_fijo} />

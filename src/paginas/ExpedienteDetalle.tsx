@@ -144,16 +144,16 @@ export function ExpedienteDetalle() {
     <div>
       <VolverAExpedientes />
 
-      <header className="flex items-start justify-between gap-4 mt-4 mb-8">
+      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-4 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black uppercase tracking-[0.1em] text-white break-words">
+          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white break-words">
             {expediente.caratula}
           </h1>
           <p className="text-sm text-text-gray-light mt-1">
             {expediente.cliente_apellido}, {expediente.cliente_nombre}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <EstadoBadge
             estado={expediente.estado}
             colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
