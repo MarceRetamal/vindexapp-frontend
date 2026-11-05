@@ -25,6 +25,7 @@ export const api = {
     hora?: string;
     modalidad?: 'Presencial' | 'Videoconferencia' | 'Telefónica';
     lugar?: string;
+    recordatorio?: boolean;
   }) =>
     pedido<{ id: string; tipo: string; fecha: string; estado: string }>('/audiencias', {
       method: 'POST',

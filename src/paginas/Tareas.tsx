@@ -171,7 +171,7 @@ function ResumenAgenda({ onError }: { onError: (mensaje: string | null) => void 
       <div className="flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
         <span>
           {activo
-            ? 'Resumen diario por WhatsApp: todos los días desde las 8 te llega lo vencido y lo que vence hoy, mañana y pasado (tareas, audiencias y vencimientos).'
+            ? 'Avisos por WhatsApp: a las 8, lo vencido y lo que vence hoy, mañana y pasado; 2 horas antes de cada audiencia con hora; y a las 17, lo que vence hoy y sigue pendiente.'
             : 'El resumen diario de agenda por WhatsApp no está configurado.'}
         </span>
         {activo && (
