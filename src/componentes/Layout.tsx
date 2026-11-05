@@ -11,6 +11,7 @@ const SECCIONES = [
   { ruta: '/', etiqueta: 'Inicio' },
   { ruta: '/novedades', etiqueta: 'Novedades' },
   { ruta: '/tareas', etiqueta: 'Tareas' },
+  { ruta: '/plazos', etiqueta: 'Plazos' },
   { ruta: '/clientes', etiqueta: 'Clientes' },
   { ruta: '/expedientes', etiqueta: 'Expedientes' },
   { ruta: '/presupuestos', etiqueta: 'Presupuestos' },

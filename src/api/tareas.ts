@@ -35,6 +35,13 @@ export interface DatosTareaExtrajudicial {
 export const api = {
   listarTodas: () => pedido<TareaListado[]>('/tareas?todas=1'),
 
+  /** Tarea con fecha límite, de un expediente o suelta (ej. el vencimiento que calculó la pantalla Plazos). */
+  crearTareaConVencimiento: (datos: { titulo: string; fecha_limite: string; expediente_id?: string; descripcion?: string; tipo?: string }) =>
+    pedido<{ id: string; titulo: string }>('/tareas', {
+      method: 'POST',
+      body: JSON.stringify(datos),
+    }),
+
   crearTareaExtrajudicial: (datos: DatosTareaExtrajudicial) =>
     pedido<{ id: string; titulo: string }>('/tareas', {
       method: 'POST',

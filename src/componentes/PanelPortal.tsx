@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { api as portalApi, type CausaPortal, type CausaVinculada } from '../api/portal';
 import { api as novedadesApi, avisarCambioNovedades, type Novedad } from '../api/novedades';
 import { EmptyState } from './EmptyState';
+import { EnlacePlazo } from './EnlacePlazo';
 import { ErrorBanner } from './ErrorBanner';
 import { EstadoBadge } from './EstadoBadge';
 import { ListSkeleton } from './ListSkeleton';
@@ -208,6 +209,7 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
                           Abrir en el portal
                         </a>
                       )}
+                      <EnlacePlazo novedad={n} />
                     </div>
                   </article>
                 );

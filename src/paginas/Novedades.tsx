@@ -10,6 +10,7 @@ import {
 import { api as apiAlertas, mensajeDeError, type EstadoWhatsApp } from '../api/alertas';
 import { api as apiPortal, type EstadoPortal } from '../api/portal';
 import { EmptyState } from '../componentes/EmptyState';
+import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -323,6 +324,7 @@ function FilaNovedad({
               Abrir en el portal
             </a>
           )}
+          <EnlacePlazo novedad={novedad} />
         </div>
       </div>
 
