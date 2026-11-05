@@ -36,6 +36,8 @@ export interface CausaSugerida {
   fecha_inicio: string | null;
   certeza: 'alta' | 'posible';
   motivo: string;
+  /** Si coincide por número con un expediente que el cliente ya tiene: se vincula con ese, no se crea otro. */
+  expediente_existente: { id: string; caratula: string } | null;
 }
 
 export const api = {

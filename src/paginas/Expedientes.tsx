@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router';
 import { api, type Expediente } from '../api/expedientes';
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { PageHeader } from '../componentes/PageHeader';
@@ -17,6 +18,7 @@ const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-si
 const etiquetaClases = 'text-xs text-text-gray-light';
 
 export function Expedientes() {
+  const navegar = useNavigate();
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -49,10 +51,8 @@ export function Expedientes() {
       {mostrarFormulario && (
         <FormularioNuevoExpediente
           clientes={clientes}
-          onCreado={() => {
-            setMostrarFormulario(false);
-            cargar();
-          }}
+          // Se abre la ficha del expediente nuevo: ahí aparece la causa del portal con el mismo número, si existe.
+          onCreado={(id) => navegar(`/expedientes/${id}`)}
         />
       )}
 
@@ -286,7 +286,7 @@ function FormularioNuevoExpediente({
   onCreado,
 }: {
   clientes: Cliente[];
-  onCreado: () => void;
+  onCreado: (id: string) => void;
 }) {
   const [clienteId, setClienteId] = useState('');
   const [caratula, setCaratula] = useState('');
@@ -301,14 +301,14 @@ function FormularioNuevoExpediente({
     setEnviando(true);
     setError(null);
     try {
-      await api.crearExpediente({
+      const creado = await api.crearExpediente({
         cliente_id: clienteId,
         caratula,
         numero: numero || undefined,
         fuero: fuero || undefined,
         juzgado: juzgado || undefined,
       });
-      onCreado();
+      onCreado(creado.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear el expediente.');
     } finally {
