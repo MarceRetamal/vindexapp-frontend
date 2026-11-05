@@ -11,6 +11,7 @@ import { Liquidaciones } from './paginas/Liquidaciones';
 import { Reportes } from './paginas/Reportes';
 import { Novedades } from './paginas/Novedades';
 import { Tareas } from './paginas/Tareas';
+import { Plazos } from './paginas/Plazos';
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'novedades', element: <Novedades /> },
       { path: 'tareas', element: <Tareas /> },
+      { path: 'plazos', element: <Plazos /> },
       { path: 'clientes', element: <Clientes /> },
       { path: 'clientes/:id', element: <ClienteDetalle /> },
       { path: 'expedientes', element: <Expedientes /> },
