@@ -6,8 +6,14 @@ export interface EstadoWhatsApp {
   estudio_correcto: boolean;
 }
 
+/** Con qué plantilla sale el resumen diario de agenda: la propia, la de avisos del sistema, o ninguna. */
+export type PlantillaAgenda = 'agenda' | 'sistema' | null;
+
 export const api = {
-  obtenerEstado: () => pedido<{ whatsapp: EstadoWhatsApp }>('/alertas/estado'),
+  obtenerEstado: () => pedido<{ whatsapp: EstadoWhatsApp; agenda?: { plantilla: PlantillaAgenda } }>('/alertas/estado'),
+
+  /** Manda ahora el resumen de agenda de hoy, sin registrarlo como enviado. */
+  enviarAgendaPrueba: () => pedido<{ enviado: true; pendientes: number }>('/alertas/prueba-agenda', { method: 'POST' }),
 
   enviarPrueba: () => pedido<{ enviado: true; pendientes: number }>('/alertas/prueba', { method: 'POST' }),
 };
