@@ -10,6 +10,7 @@ import { Agenda } from './paginas/Agenda';
 import { Liquidaciones } from './paginas/Liquidaciones';
 import { Reportes } from './paginas/Reportes';
 import { Novedades } from './paginas/Novedades';
+import { Tareas } from './paginas/Tareas';
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'novedades', element: <Novedades /> },
+      { path: 'tareas', element: <Tareas /> },
       { path: 'clientes', element: <Clientes /> },
       { path: 'clientes/:id', element: <ClienteDetalle /> },
       { path: 'expedientes', element: <Expedientes /> },
