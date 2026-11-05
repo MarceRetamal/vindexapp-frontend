@@ -6,6 +6,7 @@ import { api as apiActuaciones, type Actuacion } from '../api/actuaciones';
 import { api as apiTareas, type Tarea } from '../api/tareas';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
+import { PanelPortal } from '../componentes/PanelPortal';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -237,6 +238,7 @@ export function ExpedienteDetalle() {
               ))}
             </motion.div>
           )}
+          <PanelPortal expedienteId={id!} />
         </div>
 
         <div className="flex flex-col gap-6">
