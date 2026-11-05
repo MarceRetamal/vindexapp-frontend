@@ -22,7 +22,35 @@ export interface ResultadoLectura {
   primera: boolean;
 }
 
+export interface CausaPortal {
+  id: string;
+  numero_causa: string;
+  caratula: string | null;
+  organismo: string | null;
+  fecha_inicio: string | null;
+  expediente_id: string | null;
+  expediente_caratula: string | null;
+}
+
+export type CausaVinculada = Omit<CausaPortal, 'expediente_id' | 'expediente_caratula'>;
+
 export const api = {
+  /** Causas importadas del portal, con el expediente al que están vinculadas (si alguno). */
+  listarCausas: () => pedido<CausaPortal[]>('/portal/causas'),
+
+  causasDeExpediente: (expedienteId: string) => pedido<CausaVinculada[]>(`/expedientes/${expedienteId}/causas-portal`),
+
+  vincularCausa: (expedienteId: string, causaId: string) =>
+    pedido<{ causa_portal_id: string; expediente_id: string; novedades_vinculadas: number }>(`/expedientes/${expedienteId}/causas-portal`, {
+      method: 'POST',
+      body: JSON.stringify({ causa_portal_id: causaId }),
+    }),
+
+  desvincularCausa: (expedienteId: string, causaId: string) =>
+    pedido<{ causa_portal_id: string; novedades_desvinculadas: number }>(`/expedientes/${expedienteId}/causas-portal/${causaId}`, {
+      method: 'DELETE',
+    }),
+
   obtenerEstado: () => pedido<EstadoPortal>('/portal/estado'),
 
   /** Lee el portal ahora. La API informa el motivo si no se puede (falta configuración, sin causas, rechazo del portal). */

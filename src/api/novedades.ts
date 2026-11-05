@@ -54,6 +54,7 @@ export interface ResumenNovedades {
 export interface FiltrosNovedades {
   estado?: EstadoNovedades;
   q?: string;
+  expediente_id?: string;
   limit?: number;
   offset?: number;
 }
@@ -70,6 +71,7 @@ export const api = {
     const params = new URLSearchParams();
     if (filtros.estado) params.set('estado', filtros.estado);
     if (filtros.q) params.set('q', filtros.q);
+    if (filtros.expediente_id) params.set('expediente_id', filtros.expediente_id);
     if (filtros.limit !== undefined) params.set('limit', String(filtros.limit));
     if (filtros.offset !== undefined) params.set('offset', String(filtros.offset));
     const consulta = params.toString();
