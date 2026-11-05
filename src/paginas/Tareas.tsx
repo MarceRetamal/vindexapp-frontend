@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { api, type TareaListado } from '../api/tareas';
 import { api as clientesApi, type Cliente } from '../api/cliente';
+import { api as alertasApi, mensajeDeError } from '../api/alertas';
 import { PageHeader } from '../componentes/PageHeader';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -107,6 +108,8 @@ export function Tareas() {
         />
       </div>
 
+      <ResumenAgenda onError={setError} />
+
       {error && <ErrorBanner message={`No se pudo completar la operación: ${error}`} />}
 
       {cargando ? (
@@ -130,6 +133,54 @@ export function Tareas() {
           ))}
         </motion.div>
       )}
+    </div>
+  );
+}
+
+/** Estado del resumen diario de agenda por WhatsApp y botón para probarlo. */
+function ResumenAgenda({ onError }: { onError: (mensaje: string | null) => void }) {
+  const [activo, setActivo] = useState<boolean | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  useEffect(() => {
+    alertasApi
+      .obtenerEstado()
+      .then((r) => setActivo(r.whatsapp.configurado && r.whatsapp.estudio_correcto && Boolean(r.agenda?.plantilla)))
+      .catch(() => setActivo(false));
+  }, []);
+
+  async function probar() {
+    if (!window.confirm('Se enviará ahora por WhatsApp el resumen de agenda de hoy. ¿Seguimos?')) return;
+    setEnviando(true);
+    onError(null);
+    setAviso(null);
+    try {
+      const r = await alertasApi.enviarAgendaPrueba();
+      setAviso(`Resumen enviado (${r.pendientes} ${r.pendientes === 1 ? 'pendiente' : 'pendientes'}). Revisá tu WhatsApp.`);
+    } catch (e) {
+      onError(mensajeDeError(e));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (activo === null) return null;
+  return (
+    <div className="mb-6 flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
+        <span>
+          {activo
+            ? 'Resumen diario por WhatsApp: todos los días desde las 8 te llega lo vencido y lo que vence hoy, mañana y pasado (tareas, audiencias y vencimientos).'
+            : 'El resumen diario de agenda por WhatsApp no está configurado.'}
+        </span>
+        {activo && (
+          <Button variant="ghost" size="sm" onClick={probar} disabled={enviando} className={botonClases}>
+            {enviando ? 'Enviando…' : 'Enviar resumen de prueba'}
+          </Button>
+        )}
+      </div>
+      {aviso && <div className="border-l-2 border-success text-success bg-graphite px-4 py-3 rounded-sharp text-sm">{aviso}</div>}
     </div>
   );
 }
