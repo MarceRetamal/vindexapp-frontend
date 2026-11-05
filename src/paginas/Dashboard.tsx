@@ -57,7 +57,7 @@ export function Dashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
             <StatCard etiqueta="Novedades pendientes" valor={datos.novedadesPendientes} to="/novedades" />
             <StatCard etiqueta="Expedientes activos" valor={datos.expedientesActivos} />
-            <StatCard etiqueta="Tareas pendientes" valor={datos.tareasPendientes.total} />
+            <StatCard etiqueta="Tareas pendientes" valor={datos.tareasPendientes.total} to="/tareas" />
             <StatCard etiqueta="Próximas audiencias" valor={datos.proximasAudiencias.length} />
             <StatCard etiqueta="Vencimientos próximos" valor={datos.vencimientosProximos.length} />
           </div>
@@ -140,7 +140,7 @@ export function Dashboard() {
                 {datos.tareasPendientes.proximas.map((t) => (
                   <FilaDashboard
                     key={t.id}
-                    to={t.expediente_id ? `/expedientes/${t.expediente_id}` : undefined}
+                    to={t.expediente_id ? `/expedientes/${t.expediente_id}` : '/tareas'}
                     titulo={t.titulo}
                     subtitulo={t.expediente_caratula ?? 'Tarea extrajudicial'}
                     fecha={t.fecha_limite}
