@@ -7,7 +7,7 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
 import { router } from './rutas';
-import { whoami } from './api/whoami';
+import { setSesion, whoami } from './api/whoami';
 import { setEstudioId } from './api/http';
 import { PantallaMarca } from './componentes/Marca';
 import './estilos.css';
@@ -18,8 +18,9 @@ function Arranque() {
 
   useEffect(() => {
     whoami()
-      .then(({ estudio }) => {
+      .then(({ usuario, estudio }) => {
         setEstudioId(estudio.id);
+        setSesion(usuario, estudio);
         setEstado('listo');
       })
       .catch((err) => {

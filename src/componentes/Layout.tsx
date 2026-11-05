@@ -1,24 +1,18 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { MenuIcon, XIcon } from 'lucide-react';
+import { MenuIcon, SearchIcon, XIcon } from 'lucide-react';
 
 import { api as novedadesApi, EVENTO_NOVEDADES } from '../api/novedades';
+import { sesionActual } from '../api/whoami';
+import { iniciales } from '../lib/fechas';
+import { EVENTO_PALETA, GRUPOS, SECCIONES } from '../navegacion';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Isotipo, Wordmark } from './Marca';
+import { PaletaComandos } from './PaletaComandos';
 
-const SECCIONES = [
-  { ruta: '/', etiqueta: 'Inicio' },
-  { ruta: '/novedades', etiqueta: 'Novedades' },
-  { ruta: '/tareas', etiqueta: 'Tareas' },
-  { ruta: '/plazos', etiqueta: 'Plazos' },
-  { ruta: '/clientes', etiqueta: 'Clientes' },
-  { ruta: '/expedientes', etiqueta: 'Expedientes' },
-  { ruta: '/presupuestos', etiqueta: 'Presupuestos' },
-  { ruta: '/agenda', etiqueta: 'Agenda' },
-  { ruta: '/liquidaciones', etiqueta: 'Liquidaciones' },
-  { ruta: '/reportes', etiqueta: 'Reportes' },
-];
+const abrirPaleta = () => window.dispatchEvent(new Event(EVENTO_PALETA));
+const ATAJO = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
 
 export function Layout() {
   const location = useLocation();
@@ -67,66 +61,91 @@ export function Layout() {
     };
   }, [location.pathname]);
 
+  const { usuario, estudio } = sesionActual();
+
   const menu = (
     <>
-      <div className="px-6 pt-9 pb-7 max-md:pt-6 max-md:pb-5">
+      <div className="px-6 pt-8 pb-6 max-md:pt-6 max-md:pb-4">
         <div className="flex items-center gap-3.5">
           <Isotipo tamano={44} />
           <Wordmark />
         </div>
-        <div className="mt-7 h-px bg-line max-md:mt-5" />
-        <p className="mt-3 text-[10px] font-normal tracking-[0.28em] text-silver-deep uppercase">
-          Gestión interna
-        </p>
       </div>
 
-      <nav className="flex flex-col gap-0.5 flex-1">
-        {SECCIONES.map((s) => (
-          <NavLink
-            key={s.ruta}
-            to={s.ruta}
-            end={s.ruta === '/'}
-            className={({ isActive }) =>
-              `relative flex items-center px-6 py-3 max-md:py-3.5 text-[13px] uppercase tracking-[0.12em] transition-colors ${
-                isActive
-                  ? 'text-white font-bold bg-white/[0.03]'
-                  : 'text-silver-deep font-normal hover:text-white hover:bg-white/[0.02]'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-silver via-silver-deep to-silver" />
-                )}
-                {s.etiqueta}
-                {s.ruta === '/novedades' && novedadesPendientes > 0 && (
-                  <span
-                    className="ml-2 min-w-5 rounded-sharp border border-warning px-1.5 text-center font-mono text-[10px] leading-5 text-warning"
-                    aria-label={`${novedadesPendientes} novedades pendientes`}
-                  >
-                    {novedadesPendientes}
-                  </span>
-                )}
-              </>
-            )}
-          </NavLink>
+      <div className="px-3 pb-5">
+        <button
+          type="button"
+          onClick={abrirPaleta}
+          className="superficie flex w-full items-center gap-3 px-3 py-2.5 text-sm text-text-gray-light transition-colors hover:border-silver-deep hover:text-silver"
+        >
+          <SearchIcon className="h-[18px] w-[18px]" strokeWidth={1.6} />
+          Buscar
+          <kbd className="ml-auto rounded-sm border border-line px-1.5 py-0.5 font-sans text-[10px] text-silver-deep max-md:hidden">{ATAJO}</kbd>
+        </button>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-5 pb-4" aria-label="Secciones">
+        {GRUPOS.map((grupo) => (
+          <div key={grupo} className="flex flex-col gap-0.5">
+            <div className="eyebrow px-6 pb-1.5 text-[10px] text-text-gray-light">{grupo}</div>
+            {SECCIONES.filter((s) => s.grupo === grupo).map((s) => {
+              const Icono = s.icono;
+              return (
+                <NavLink
+                  key={s.ruta}
+                  to={s.ruta}
+                  end={s.ruta === '/'}
+                  className={({ isActive }) =>
+                    `group relative mx-3 flex items-center gap-3 rounded-md px-3 py-2.5 text-[14px] transition-colors max-md:py-3 ${
+                      isActive ? 'bg-graphite-raised font-bold text-white' : 'font-normal text-silver hover:bg-white/[0.03] hover:text-white'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute -left-3 bottom-2 top-2 w-[3px] rounded-r bg-gradient-to-b from-silver via-silver-deep to-silver" />}
+                      <Icono className={`h-[18px] w-[18px] shrink-0 transition-colors ${isActive ? 'text-silver' : 'text-silver-deep group-hover:text-silver'}`} strokeWidth={1.6} />
+                      {s.etiqueta}
+                      {s.ruta === '/novedades' && novedadesPendientes > 0 && (
+                        <span
+                          className="ml-auto min-w-5 rounded-full border border-warning/70 bg-warning/10 px-1.5 text-center font-mono text-[11px] leading-5 text-warning"
+                          aria-label={`${novedadesPendientes} novedades pendientes`}
+                        >
+                          {novedadesPendientes}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
         ))}
       </nav>
 
-      <div className="px-6 py-6 border-t border-line">
-        <p className="text-[10px] font-normal tracking-[0.22em] text-silver-deep uppercase">
-          Estudio jurídico
-        </p>
-        <p className="mt-1 text-[10px] font-normal tracking-[0.22em] text-text-gray-light uppercase">La Plata</p>
-      </div>
+      {usuario && (
+        <div className="flex items-center gap-3 border-t border-line px-6 py-5">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-silver-deep/60 bg-graphite text-xs font-bold tracking-wider text-silver"
+            aria-hidden="true"
+          >
+            {iniciales(usuario.nombre, usuario.apellido)}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-bold text-white">
+              {usuario.nombre} {usuario.apellido}
+            </div>
+            <div className="truncate text-[11px] text-text-gray-light">{estudio?.nombre ?? 'Estudio jurídico'}</div>
+          </div>
+        </div>
+      )}
     </>
   );
 
   return (
     <div className="flex min-h-screen bg-structural-black">
       {/* Pantallas anchas: menú lateral fijo. */}
-      <aside className="hidden md:flex w-[232px] shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-line bg-structural-black flex-col">
+      <aside className="hidden md:flex w-[248px] shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-line bg-structural-black flex-col">
         {menu}
       </aside>
 
@@ -137,6 +156,15 @@ export function Layout() {
             <Isotipo tamano={32} />
             <Wordmark className="scale-90 origin-left" />
           </div>
+          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={abrirPaleta}
+            aria-label="Buscar"
+            className="flex h-11 w-11 items-center justify-center rounded-sharp border border-line text-silver hover:text-white"
+          >
+            <SearchIcon className="h-5 w-5" />
+          </button>
           <button
             type="button"
             onClick={() => setMenuAbierto(true)}
@@ -146,9 +174,10 @@ export function Layout() {
           >
             <MenuIcon className="h-5 w-5" />
           </button>
+          </div>
         </header>
 
-        <main className="flex-1 min-w-0 w-full max-w-[1100px] px-4 py-6 sm:px-6 md:px-12 md:py-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <main className="flex-1 min-w-0 w-full max-w-[1180px] px-4 py-6 sm:px-6 md:px-12 md:py-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -164,6 +193,8 @@ export function Layout() {
           </AnimatePresence>
         </main>
       </div>
+
+      <PaletaComandos />
 
       {/* Celular: panel del menú. */}
       {menuAbierto && (
