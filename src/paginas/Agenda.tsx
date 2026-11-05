@@ -212,6 +212,7 @@ function FormularioNuevaAudiencia({
   const [hora, setHora] = useState('');
   const [modalidad, setModalidad] = useState<(typeof MODALIDADES)[number] | ''>('');
   const [lugar, setLugar] = useState('');
+  const [recordatorio, setRecordatorio] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -227,6 +228,7 @@ function FormularioNuevaAudiencia({
         hora: hora || undefined,
         modalidad: modalidad || undefined,
         lugar: lugar || undefined,
+        recordatorio,
       });
       onCreado();
     } catch (err) {
@@ -301,6 +303,22 @@ function FormularioNuevaAudiencia({
       <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="nueva-audiencia-lugar" className={etiquetaClases}>Lugar</label>
         <Input id="nueva-audiencia-lugar" className={campoClases} value={lugar} onChange={(e) => setLugar(e.target.value)} />
+      </div>
+
+      <div className="sm:col-span-2 flex flex-col gap-1">
+        <label htmlFor="nueva-audiencia-recordatorio" className="flex items-center gap-2 text-sm text-white">
+          <input
+            id="nueva-audiencia-recordatorio"
+            type="checkbox"
+            checked={recordatorio}
+            onChange={(e) => setRecordatorio(e.target.checked)}
+            className="accent-silver"
+          />
+          Recordármela por WhatsApp 2 horas antes
+        </label>
+        {recordatorio && !hora && (
+          <span className="text-xs text-text-gray-light">Sin hora cargada no hay recordatorio: la audiencia sale solo en el resumen de la mañana.</span>
+        )}
       </div>
 
       {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
