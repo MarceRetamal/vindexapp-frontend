@@ -1,230 +1,300 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
-import { api, type Dashboard as DashboardData } from '../api/dashboard';
+import { ArrowRightIcon, CalendarDaysIcon, CheckIcon, HourglassIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react';
+import { apiAgenda, type AgendaDia, type ClaseItemDia, type ItemDia } from '../api/dashboard';
 import { api as novedadesApi, type Novedad } from '../api/novedades';
-import { EmptyState } from '../componentes/EmptyState';
+import { api as portalApi, type EstadoPortal } from '../api/portal';
+import { sesionActual } from '../api/whoami';
+import { diaYMes, etiquetaDias, fechaLarga, haceCuanto, horaEnArgentina, resumenDelDia, saludoDe } from '../lib/fechas';
+import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
-import { Filete } from '../componentes/Filete';
 
-function formatearFechaISO(fechaISO: string): string {
-  const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
-  return `${dia}/${mes}/${anio}`;
-}
+const ICONO_CLASE: Record<ClaseItemDia, { icono: LucideIcon; etiqueta: string }> = {
+  plazo: { icono: HourglassIcon, etiqueta: 'Plazo' },
+  audiencia: { icono: CalendarDaysIcon, etiqueta: 'Audiencia' },
+  tarea: { icono: SquareCheckBigIcon, etiqueta: 'Tarea' },
+};
 
-function fechaISOVencida(fechaISO: string): boolean {
-  const hoy = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-  }).format(new Date());
-  return fechaISO.slice(0, 10) < hoy;
-}
+const GRUPOS_AGENDA: { id: string; titulo: string; incluye: (dias: number) => boolean }[] = [
+  { id: 'vencido', titulo: 'Vencido', incluye: (d) => d < 0 },
+  { id: 'hoy', titulo: 'Hoy', incluye: (d) => d === 0 },
+  { id: 'manana', titulo: 'Mañana', incluye: (d) => d === 1 },
+  { id: 'semana', titulo: 'Esta semana', incluye: (d) => d >= 2 && d <= 7 },
+  { id: 'luego', titulo: 'Más adelante', incluye: (d) => d > 7 },
+];
 
 export function Dashboard() {
-  const [datos, setDatos] = useState<DashboardData | null>(null);
-  const [cargando, setCargando] = useState(true);
+  const [agenda, setAgenda] = useState<AgendaDia | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [novedades, setNovedades] = useState<Novedad[]>([]);
+  const [novedades, setNovedades] = useState<{ lista: Novedad[]; total: number } | null>(null);
+  const [portal, setPortal] = useState<EstadoPortal | null>(null);
+  const { usuario } = sesionActual();
 
   useEffect(() => {
-    setCargando(true);
-    setError(null);
-    api
-      .obtenerDashboard()
-      .then(setDatos)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setCargando(false));
-    // Las últimas novedades son un agregado: si no cargan, el resto del panel se muestra igual.
+    apiAgenda
+      .obtenerAgenda(14)
+      .then(setAgenda)
+      .catch((e: Error) => setError(e.message));
+    // Lo del portal es un agregado: si no carga, el resto de la pantalla se muestra igual.
     novedadesApi
-      .listarNovedades({ estado: 'pendientes', limit: 5 })
-      .then((r) => setNovedades(r.novedades))
-      .catch(() => setNovedades([]));
+      .listarNovedades({ estado: 'pendientes', limit: 4 })
+      .then((r) => setNovedades({ lista: r.novedades, total: r.total }))
+      .catch(() => setNovedades({ lista: [], total: 0 }));
+    portalApi
+      .obtenerEstado()
+      .then(setPortal)
+      .catch(() => setPortal(null));
   }, []);
+
+  const resumen = useMemo(() => {
+    if (!agenda) return null;
+    const deHoy = agenda.items.filter((i) => i.dias === 0);
+    const audiencias = deHoy.filter((i) => i.clase === 'audiencia');
+    return resumenDelDia({
+      vencidas: agenda.resumen.vencidas,
+      plazosHoy: deHoy.filter((i) => i.clase === 'plazo').length,
+      audienciasHoy: audiencias.length,
+      horaAudiencia: audiencias[0]?.hora ?? null,
+      tareasHoy: deHoy.filter((i) => i.clase === 'tarea').length,
+      novedades: novedades?.total ?? 0,
+    });
+  }, [agenda, novedades]);
 
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Inicio</h1>
-      <Filete className="mt-5 mb-9" />
+      <Encabezado
+        fecha={agenda?.hoy}
+        nombre={usuario?.nombre}
+        frase={resumen}
+        cifras={agenda ? [
+          { etiqueta: 'Vencido', valor: agenda.resumen.vencidas, tono: agenda.resumen.vencidas > 0 ? 'urgente' : 'calmo' },
+          { etiqueta: 'Hoy', valor: agenda.resumen.hoy, tono: agenda.resumen.hoy > 0 ? 'hoy' : 'calmo' },
+          { etiqueta: 'Próximos 7 días', valor: agenda.resumen.proximas, tono: 'calmo' },
+        ] : null}
+      />
 
-      {error && <ErrorBanner message={`No se pudo cargar el panel: ${error}`} />}
+      {error && <ErrorBanner message={`No se pudo cargar tu agenda: ${error}`} />}
 
-      {cargando ? (
-        <div className="flex flex-col gap-8">
-          <ListSkeleton rows={4} />
-        </div>
-      ) : datos ? (
-        <div className="flex flex-col gap-10">
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-            <StatCard etiqueta="Novedades pendientes" valor={datos.novedadesPendientes} to="/novedades" />
-            <StatCard etiqueta="Expedientes activos" valor={datos.expedientesActivos} />
-            <StatCard etiqueta="Tareas pendientes" valor={datos.tareasPendientes.total} to="/tareas" />
-            <StatCard etiqueta="Próximas audiencias" valor={datos.proximasAudiencias.length} />
-            <StatCard etiqueta="Vencimientos próximos" valor={datos.vencimientosProximos.length} />
-          </div>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section aria-label="Agenda" className="min-w-0">
+          {!agenda && !error ? <ListSkeleton rows={5} /> : agenda && <ListaAgenda items={agenda.items} />}
+        </section>
 
-          <Seccion titulo="Novedades del portal sin revisar">
-            {novedades.length === 0 ? (
-              <EmptyState message="No hay novedades pendientes de revisar." />
-            ) : (
-              <>
-                {novedades.map((n) => (
-                  <FilaDashboard
-                    key={n.id}
-                    to="/novedades"
-                    titulo={n.tipo ?? 'Notificación del portal'}
-                    subtitulo={`${n.numero_causa} · ${n.caratula ?? ''}`}
-                    fecha={n.fecha_notificacion}
-                  />
-                ))}
-                <Link to="/novedades" className="inline-block mt-3 text-xs text-text-gray-light hover:text-white">
-                  Ver todas las novedades
-                </Link>
-              </>
-            )}
-          </Seccion>
-
-          <Seccion titulo="Próximas audiencias">
-            {datos.proximasAudiencias.length === 0 ? (
-              <EmptyState message="No hay audiencias programadas en los próximos días." />
-            ) : (
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              >
-                {datos.proximasAudiencias.map((a) => (
-                  <FilaDashboard
-                    key={a.id}
-                    to={`/expedientes/${a.expediente_id}`}
-                    titulo={a.tipo}
-                    subtitulo={a.expediente_caratula}
-                    fecha={a.fecha}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </Seccion>
-
-          <Seccion titulo="Vencimientos próximos">
-            {datos.vencimientosProximos.length === 0 ? (
-              <EmptyState message="No hay vencimientos cargados para los próximos días." />
-            ) : (
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              >
-                {datos.vencimientosProximos.map((v) => (
-                  <FilaDashboard
-                    key={v.id}
-                    to={`/expedientes/${v.expediente_id}`}
-                    titulo={v.tipo}
-                    subtitulo={v.expediente_caratula}
-                    fecha={v.vencimiento ?? v.fecha}
-                    urgente
-                  />
-                ))}
-              </motion.div>
-            )}
-          </Seccion>
-
-          <Seccion titulo="Tareas pendientes">
-            {datos.tareasPendientes.proximas.length === 0 ? (
-              <EmptyState message="No hay tareas pendientes con fecha límite próxima." />
-            ) : (
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-              >
-                {datos.tareasPendientes.proximas.map((t) => (
-                  <FilaDashboard
-                    key={t.id}
-                    to={t.expediente_id ? `/expedientes/${t.expediente_id}` : '/tareas'}
-                    titulo={t.titulo}
-                    subtitulo={t.expediente_caratula ?? 'Tarea extrajudicial'}
-                    fecha={t.fecha_limite}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </Seccion>
-        </div>
-      ) : null}
+        <aside className="flex min-w-0 flex-col gap-5">
+          <PulsoPortal estado={portal} />
+          <TarjetaNovedades datos={novedades} />
+        </aside>
+      </div>
     </div>
   );
 }
 
-function StatCard({ etiqueta, valor, to }: { etiqueta: string; valor: number; to?: string }) {
-  const contenido = (
-    <>
-      <div className="text-3xl font-light tabular-nums text-white">{valor}</div>
-      <div className="text-[10px] font-normal uppercase tracking-[0.12em] sm:tracking-[0.16em] text-silver-deep mt-2 break-words">{etiqueta}</div>
-    </>
-  );
-  const clases = 'min-w-0 border border-line rounded-sharp bg-graphite p-4 sm:p-5';
-  return to ? (
-    <Link to={to} className={`${clases} block hover:border-silver transition-colors`}>
-      {contenido}
-    </Link>
-  ) : (
-    <div className={clases}>{contenido}</div>
+function Encabezado({
+  fecha,
+  nombre,
+  frase,
+  cifras,
+}: {
+  fecha?: string;
+  nombre?: string;
+  frase: string | null;
+  cifras: { etiqueta: string; valor: number; tono: 'urgente' | 'hoy' | 'calmo' }[] | null;
+}) {
+  const saludo = saludoDe(horaEnArgentina());
+  return (
+    <header className="superficie aparecer flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        <p className="eyebrow">{fecha ? fechaLarga(fecha) : ' '}</p>
+        <h1 className="mt-2 text-[28px] font-black leading-tight text-white sm:text-[34px]">
+          {saludo}
+          {nombre ? `, ${nombre}` : ''}
+        </h1>
+        <p className="mt-3 max-w-xl text-[17px] font-light leading-relaxed text-silver sm:text-lg">{frase ?? ' '}</p>
+      </div>
+
+      {cifras && (
+        <dl className="flex shrink-0 divide-x divide-line self-start lg:self-end">
+          {cifras.map((c) => (
+            <div key={c.etiqueta} className="px-5 first:pl-0 last:pr-0 sm:px-6">
+              <dd
+                className={`text-[40px] font-light leading-none tabular-nums sm:text-5xl ${
+                  c.tono === 'urgente' ? 'text-warning' : c.tono === 'hoy' ? 'text-white' : 'text-silver-deep'
+                }`}
+              >
+                {c.valor}
+              </dd>
+              <dt className="eyebrow mt-2.5 text-[10px]">{c.etiqueta}</dt>
+            </div>
+          ))}
+        </dl>
+      )}
+    </header>
   );
 }
 
-function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function ListaAgenda({ items }: { items: ItemDia[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="superficie flex flex-col items-center px-6 py-14 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-silver-deep/50 text-silver">
+          <CheckIcon className="h-6 w-6" strokeWidth={1.6} />
+        </div>
+        <h2 className="mt-5 text-lg font-bold text-white">Agenda despejada</h2>
+        <p className="mt-2 max-w-sm text-sm text-text-gray-light">No hay tareas, audiencias ni plazos para los próximos 14 días. Cuando cargues algo con fecha, aparece acá ordenado por urgencia.</p>
+        <Link to="/tareas" className="mt-6 inline-flex items-center gap-2 text-sm text-silver hover:text-white">
+          Cargar una tarea <ArrowRightIcon className="h-4 w-4" strokeWidth={1.6} />
+        </Link>
+      </div>
+    );
+  }
+
+  let orden = 0;
   return (
-    <section>
-      <h2 className="mb-3 flex items-center gap-4 text-xs font-bold uppercase tracking-[0.2em] text-silver">
-        {titulo}
-        <span className="h-px flex-1 bg-line" aria-hidden="true" />
-      </h2>
-      {children}
+    <div className="flex flex-col gap-9">
+      {GRUPOS_AGENDA.map((g) => {
+        const delGrupo = items.filter((i) => g.incluye(i.dias));
+        if (delGrupo.length === 0) return null;
+        return (
+          <section key={g.id} aria-label={g.titulo}>
+            <h2 className={`eyebrow mb-3 flex items-center gap-3 ${g.id === 'vencido' ? 'text-warning' : g.id === 'hoy' ? 'text-white' : ''}`}>
+              {g.titulo}
+              <span className="font-light tabular-nums tracking-normal text-text-gray-light">{delGrupo.length}</span>
+              <span className="h-px flex-1 bg-line" aria-hidden="true" />
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {delGrupo.map((item) => (
+                <FilaAgenda key={item.clave} item={item} demora={Math.min(orden++, 10) * 0.03} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function BloqueFecha({ item }: { item: ItemDia }) {
+  const { dia, mes } = diaYMes(item.fecha);
+  const clases =
+    item.dias < 0
+      ? 'border-warning/60 bg-warning/10 text-warning'
+      : item.dias === 0
+        ? 'border-transparent bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black'
+        : item.dias <= 2
+          ? 'border-silver/50 text-white'
+          : 'border-line text-silver-deep';
+  return (
+    <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-md border leading-none ${clases}`} aria-hidden="true">
+      <span className="text-[10px] font-bold tracking-[0.14em]">{item.dias === 0 ? 'HOY' : mes}</span>
+      {/* Una audiencia de hoy muestra su hora: es lo que hay que saber de un vistazo. */}
+      <span className={`mt-1 font-bold tabular-nums ${item.dias === 0 && item.hora ? 'text-[17px]' : 'text-[22px]'}`}>{item.dias === 0 && item.hora ? item.hora : dia}</span>
+    </div>
+  );
+}
+
+function FilaAgenda({ item, demora }: { item: ItemDia; demora: number }) {
+  const { icono: Icono, etiqueta } = ICONO_CLASE[item.clase];
+  const destino = item.expediente_id ? `/expedientes/${item.expediente_id}` : '/tareas';
+  const contexto = [item.caratula ?? (item.clase === 'tarea' ? 'Sin expediente' : null), item.cliente].filter(Boolean).join(' · ');
+  const cuando = [etiquetaDias(item.dias), item.hora ? `${item.hora} hs` : null, item.detalle].filter(Boolean).join(' · ');
+  return (
+    <motion.li initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: demora }}>
+      <Link
+        to={destino}
+        className="superficie group flex items-center gap-4 p-3.5 transition-colors hover:border-silver-deep hover:bg-graphite-raised focus-visible:border-silver"
+      >
+        <BloqueFecha item={item} />
+        <div className="min-w-0 flex-1">
+          <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{item.titulo}</div>
+          {contexto && <div className="mt-0.5 truncate text-xs text-text-gray-light">{contexto}</div>}
+          <div className={`mt-1 truncate text-xs ${item.dias < 0 ? 'font-bold text-warning' : item.dias === 0 ? 'font-bold text-white' : 'text-silver-deep'}`}>{cuando}</div>
+        </div>
+        <span className="hidden shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-silver-deep sm:inline-flex">
+          <Icono className="h-4 w-4" strokeWidth={1.6} />
+          {etiqueta}
+        </span>
+        <ArrowRightIcon className="h-4 w-4 shrink-0 text-silver-deep transition-transform group-hover:translate-x-0.5 group-hover:text-silver" strokeWidth={1.6} aria-hidden="true" />
+      </Link>
+    </motion.li>
+  );
+}
+
+type Pulso = { tono: 'ok' | 'alerta' | 'apagado'; titulo: string; detalle: string; extra?: string };
+
+function pulsoDelPortal(e: EstadoPortal): Pulso {
+  if (!e.configurado) return { tono: 'apagado', titulo: 'Portal sin conectar', detalle: 'Falta cargar los datos de conexión.' };
+  if (e.pausada) return { tono: 'alerta', titulo: 'Lectura en pausa', detalle: 'El portal rechazó la clave. Revisala para retomar la lectura.' };
+  if (e.errores_consecutivos >= 3) return { tono: 'alerta', titulo: 'Sin lectura reciente', detalle: `Hubo ${e.errores_consecutivos} intentos fallidos seguidos.` };
+  if (e.causas_importadas === 0) return { tono: 'apagado', titulo: 'Sin causas para vigilar', detalle: 'Importá tus causas del portal para empezar.' };
+  return {
+    tono: 'ok',
+    titulo: `Vigilando ${e.causas_importadas} ${e.causas_importadas === 1 ? 'causa' : 'causas'}`,
+    detalle: e.ultimo_ok ? `Última lectura ${haceCuanto(e.ultimo_ok)}` : 'Esperando la primera lectura',
+    extra: e.ultimas_nuevas > 0 ? `${e.ultimas_nuevas} ${e.ultimas_nuevas === 1 ? 'novedad nueva' : 'novedades nuevas'} en esa lectura` : 'Sin novedades nuevas',
+  };
+}
+
+/** Hace visible lo que trabaja solo: el sistema leyendo el portal de la SCBA mientras el abogado hace otra cosa. */
+function PulsoPortal({ estado }: { estado: EstadoPortal | null }) {
+  if (!estado) return null;
+  const p = pulsoDelPortal(estado);
+  return (
+    <section className="superficie p-5" aria-label="Estado del portal">
+      <p className="eyebrow">Portal de notificaciones</p>
+      <div className="mt-3 flex items-center gap-3">
+        <span
+          className={`h-2.5 w-2.5 shrink-0 rounded-full ${p.tono === 'ok' ? 'pulso bg-silver' : p.tono === 'alerta' ? 'bg-warning' : 'bg-silver-deep/50'}`}
+          aria-hidden="true"
+        />
+        <h2 className="text-[15px] font-bold text-white">{p.titulo}</h2>
+      </div>
+      <p className="mt-2 text-sm text-silver">{p.detalle}</p>
+      {p.extra && <p className="mt-0.5 text-xs text-text-gray-light">{p.extra}</p>}
     </section>
   );
 }
 
-function FilaDashboard({
-  to,
-  titulo,
-  subtitulo,
-  fecha,
-  urgente,
-}: {
-  to?: string;
-  titulo: string;
-  subtitulo: string;
-  fecha: string | null;
-  urgente?: boolean;
-}) {
-  const vencida = urgente && fecha != null && fechaISOVencida(fecha);
-  const clases = `flex items-center justify-between gap-4 py-3 border-b border-line no-underline transition-colors ${
-    to ? 'hover:bg-graphite' : ''
-  } ${vencida ? 'bg-warning/10' : ''}`;
-  const contenido = (
-    <>
-      <div className="min-w-0">
-        <div className="font-medium text-white truncate">{titulo}</div>
-        <div className="text-xs text-text-gray-light truncate">{subtitulo}</div>
-      </div>
-      {fecha && (
-        <span className={`text-xs font-mono shrink-0 ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
-          {formatearFechaISO(fecha)}
-        </span>
-      )}
-    </>
-  );
-
-  // Sin destino (tarea extrajudicial, sin expediente) la fila no es un enlace: antes llevaba a /expedientes/null.
+function TarjetaNovedades({ datos }: { datos: { lista: Novedad[]; total: number } | null }) {
+  if (!datos) return null;
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      {to ? (
-        <Link to={to} className={clases}>
-          {contenido}
-        </Link>
+    <section className="superficie p-5" aria-label="Novedades del portal">
+      <div className="flex items-center justify-between">
+        <p className="eyebrow">Por revisar</p>
+        {datos.total > 0 && (
+          <span className="min-w-5 rounded-full border border-warning/70 bg-warning/10 px-1.5 text-center font-mono text-[11px] leading-5 text-warning">{datos.total}</span>
+        )}
+      </div>
+
+      {datos.lista.length === 0 ? (
+        <div className="mt-4 flex items-center gap-3 text-sm text-silver">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-silver-deep/50 text-silver">
+            <CheckIcon className="h-4 w-4" strokeWidth={1.8} />
+          </span>
+          Todo revisado.
+        </div>
       ) : (
-        <div className={clases}>{contenido}</div>
+        <ul className="mt-3 flex flex-col">
+          {datos.lista.map((n) => (
+            <li key={n.id} className="border-b border-line py-3 last:border-b-0">
+              <div className="text-sm font-bold text-white">{n.tipo ?? 'Notificación del portal'}</div>
+              <div className="mt-0.5 truncate text-xs text-text-gray-light">
+                {n.numero_causa}
+                {n.caratula ? ` · ${n.caratula}` : ''}
+              </div>
+              <div className="mt-1.5 flex items-center justify-between gap-3">
+                <span className="text-xs text-silver-deep">{n.fecha_notificacion ? `Notificada el ${n.fecha_notificacion.split('-').reverse().join('/')}` : 'Sin fecha de notificación'}</span>
+                <EnlacePlazo novedad={n} />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
-    </motion.div>
+
+      <Link to="/novedades" className="mt-3 inline-flex items-center gap-2 text-xs text-silver hover:text-white">
+        {datos.total > datos.lista.length ? `Ver las ${datos.total} novedades` : 'Abrir la bandeja'} <ArrowRightIcon className="h-3.5 w-3.5" strokeWidth={1.6} />
+      </Link>
+    </section>
   );
 }
