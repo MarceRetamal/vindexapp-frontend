@@ -140,9 +140,9 @@ export function Dashboard() {
                 {datos.tareasPendientes.proximas.map((t) => (
                   <FilaDashboard
                     key={t.id}
-                    to={`/expedientes/${t.expediente_id}`}
+                    to={t.expediente_id ? `/expedientes/${t.expediente_id}` : undefined}
                     titulo={t.titulo}
-                    subtitulo={t.expediente_caratula}
+                    subtitulo={t.expediente_caratula ?? 'Tarea extrajudicial'}
                     fecha={t.fecha_limite}
                   />
                 ))}
@@ -191,32 +191,40 @@ function FilaDashboard({
   fecha,
   urgente,
 }: {
-  to: string;
+  to?: string;
   titulo: string;
   subtitulo: string;
   fecha: string | null;
   urgente?: boolean;
 }) {
   const vencida = urgente && fecha != null && fechaISOVencida(fecha);
+  const clases = `flex items-center justify-between gap-4 py-3 border-b border-line no-underline transition-colors ${
+    to ? 'hover:bg-graphite' : ''
+  } ${vencida ? 'bg-warning/10' : ''}`;
+  const contenido = (
+    <>
+      <div className="min-w-0">
+        <div className="font-medium text-white truncate">{titulo}</div>
+        <div className="text-xs text-text-gray-light truncate">{subtitulo}</div>
+      </div>
+      {fecha && (
+        <span className={`text-xs font-mono shrink-0 ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
+          {formatearFechaISO(fecha)}
+        </span>
+      )}
+    </>
+  );
 
+  // Sin destino (tarea extrajudicial, sin expediente) la fila no es un enlace: antes llevaba a /expedientes/null.
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      <Link
-        to={to}
-        className={`flex items-center justify-between gap-4 py-3 border-b border-line no-underline hover:bg-graphite transition-colors ${
-          vencida ? 'bg-warning/10' : ''
-        }`}
-      >
-        <div className="min-w-0">
-          <div className="font-medium text-white truncate">{titulo}</div>
-          <div className="text-xs text-text-gray-light truncate">{subtitulo}</div>
-        </div>
-        {fecha && (
-          <span className={`text-xs font-mono shrink-0 ${vencida ? 'text-warning' : 'text-text-gray-light'}`}>
-            {formatearFechaISO(fecha)}
-          </span>
-        )}
-      </Link>
+      {to ? (
+        <Link to={to} className={clases}>
+          {contenido}
+        </Link>
+      ) : (
+        <div className={clases}>{contenido}</div>
+      )}
     </motion.div>
   );
 }

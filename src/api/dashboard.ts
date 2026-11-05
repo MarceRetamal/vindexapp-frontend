@@ -7,8 +7,10 @@ export interface AudienciaProxima extends Audiencia {
   expediente_caratula: string;
 }
 
-export interface TareaProxima extends Tarea {
-  expediente_caratula: string;
+/** Una tarea extrajudicial (llamado, mail, acuerdo) no tiene expediente: los dos campos vienen en null. */
+export interface TareaProxima extends Omit<Tarea, 'expediente_id'> {
+  expediente_id: string | null;
+  expediente_caratula: string | null;
 }
 
 export interface Dashboard {
