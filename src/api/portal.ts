@@ -38,6 +38,10 @@ export const api = {
   /** Causas importadas del portal, con el expediente al que están vinculadas (si alguno). */
   listarCausas: () => pedido<CausaPortal[]>('/portal/causas'),
 
+  /** Causas sin vincular con el mismo número que el expediente (ej. cargado con los datos de una designación). */
+  sugeridasDeExpediente: (expedienteId: string) =>
+    pedido<(CausaVinculada & { certeza: 'alta' | 'posible'; motivo: string })[]>(`/expedientes/${expedienteId}/causas-sugeridas`),
+
   causasDeExpediente: (expedienteId: string) => pedido<CausaVinculada[]>(`/expedientes/${expedienteId}/causas-portal`),
 
   vincularCausa: (expedienteId: string, causaId: string) =>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api as clientesApi, type CausaSugerida } from '../api/cliente';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
+import { api as portalApi } from '../api/portal';
 import { avisarCambioNovedades } from '../api/novedades';
 import { EmptyState } from './EmptyState';
 import { ErrorBanner } from './ErrorBanner';
@@ -33,7 +34,7 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
         setExpedientes(e);
         setSugeridas(s);
         // Las de certeza alta vienen marcadas; las posibles (solo apellido) las marca el abogado si corresponden.
-        setElegidas(new Set(s.filter((c) => c.certeza === 'alta').map((c) => c.id)));
+        setElegidas(new Set(s.filter((c) => c.certeza === 'alta' && !c.expediente_existente).map((c) => c.id)));
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setCargando(false));
@@ -48,6 +49,27 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
       else nuevas.add(id);
       return nuevas;
     });
+  }
+
+  async function vincularConExistente(causa: CausaSugerida) {
+    if (!causa.expediente_existente) return;
+    setEnviando(true);
+    setError(null);
+    setAviso(null);
+    try {
+      const r = await portalApi.vincularCausa(causa.expediente_existente.id, causa.id);
+      setAviso(
+        `Causa vinculada con el expediente "${causa.expediente_existente.caratula}"` +
+          (r.novedades_vinculadas > 0 ? `, con ${r.novedades_vinculadas} ${r.novedades_vinculadas === 1 ? 'novedad que ya estaba guardada' : 'novedades que ya estaban guardadas'}.` : '.') +
+          ' Las próximas novedades entran solas.'
+      );
+      avisarCambioNovedades();
+      cargar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo vincular la causa.');
+    } finally {
+      setEnviando(false);
+    }
   }
 
   async function vincular() {
@@ -72,6 +94,9 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
       setEnviando(false);
     }
   }
+
+  const conExistente = sugeridas.filter((c) => c.expediente_existente);
+  const paraCrear = sugeridas.filter((c) => !c.expediente_existente);
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,7 +134,40 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
         )}
       </section>
 
-      {!cargando && sugeridas.length > 0 && (
+      {!cargando && conExistente.length > 0 && (
+        <section className="border border-line rounded-sharp bg-graphite p-4">
+          <h2 className={tituloClases}>Causas en el portal de expedientes que ya cargaste</h2>
+          <p className="text-xs text-text-gray-light mb-3">
+            Tienen el mismo número que un expediente de este cliente. Vinculalas para que sus novedades lleguen a la ficha.
+          </p>
+          <div className="flex flex-col">
+            {conExistente.map((c) => (
+              <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2 py-2 border-b border-line last:border-b-0">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white break-words">{c.caratula ?? 'Sin carátula'}</div>
+                  <div className="text-xs font-mono text-text-gray-light break-words">
+                    {c.numero_causa}
+                    {c.organismo ? ` · ${c.organismo}` : ''}
+                  </div>
+                  <div className={`text-xs ${c.certeza === 'alta' ? 'text-success' : 'text-warning'}`}>{c.motivo}</div>
+                  <div className="text-xs text-text-gray-light">Expediente: {c.expediente_existente?.caratula}</div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={enviando}
+                  onClick={() => vincularConExistente(c)}
+                  className="rounded-sharp border border-line text-text-gray-light hover:text-white sm:shrink-0"
+                >
+                  Vincular con ese expediente
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!cargando && paraCrear.length > 0 && (
         <section className="border border-line rounded-sharp bg-graphite p-4">
           <h2 className={tituloClases}>Causas en el portal que pueden ser de este cliente</h2>
           <p className="text-xs text-text-gray-light mb-3">
@@ -117,7 +175,7 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
             expediente con los datos del portal y sus novedades pasan a la ficha.
           </p>
           <div className="flex flex-col">
-            {sugeridas.map((c) => (
+            {paraCrear.map((c) => (
               <label key={c.id} className="flex items-start gap-3 py-2 border-b border-line last:border-b-0 cursor-pointer">
                 <input
                   type="checkbox"

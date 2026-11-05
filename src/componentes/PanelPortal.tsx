@@ -12,6 +12,16 @@ import { Input } from '@/componentes/ui/input';
 const botonClases = 'rounded-sharp border border-line text-text-gray-light hover:text-white';
 const LIMITE = 30;
 
+function avisoDeVinculo(novedades: number): string {
+  const sumadas =
+    novedades === 0
+      ? 'Todavía no había novedades guardadas de esa causa'
+      : novedades === 1
+        ? 'Se sumó 1 novedad que ya estaba guardada'
+        : `Se sumaron ${novedades} novedades que ya estaban guardadas`;
+  return `Causa vinculada. ${sumadas}; las próximas entran solas.`;
+}
+
 function formatearFecha(fechaISO: string): string {
   const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
   return `${dia}/${mes}/${anio}`;
@@ -29,6 +39,7 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [vinculando, setVinculando] = useState(false);
+  const [sugeridas, setSugeridas] = useState<(CausaVinculada & { certeza: 'alta' | 'posible'; motivo: string })[]>([]);
 
   function cargar() {
     setCargando(true);
@@ -36,9 +47,11 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
     Promise.all([
       portalApi.causasDeExpediente(expedienteId),
       novedadesApi.listarNovedades({ expediente_id: expedienteId, estado: 'todas', limit: LIMITE }),
+      portalApi.sugeridasDeExpediente(expedienteId),
     ])
-      .then(([c, n]) => {
+      .then(([c, n, s]) => {
         setCausas(c);
+        setSugeridas(s);
         setNovedades(n.novedades);
         setTotal(n.total);
       })
@@ -58,6 +71,19 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
       cargar();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo desvincular la causa.');
+    }
+  }
+
+  async function vincularSugerida(causaId: string) {
+    setError(null);
+    setAviso(null);
+    try {
+      const r = await portalApi.vincularCausa(expedienteId, causaId);
+      setAviso(avisoDeVinculo(r.novedades_vinculadas));
+      avisarCambioNovedades();
+      cargar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo vincular la causa.');
     }
   }
 
@@ -86,11 +112,32 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
           expedienteId={expedienteId}
           onVinculada={(n) => {
             setVinculando(false);
-            setAviso(`Causa vinculada. ${n === 1 ? 'Se sumó 1 novedad' : `Se sumaron ${n} novedades`} que ya estaban guardadas; las próximas entran solas.`);
+            setAviso(avisoDeVinculo(n));
             cargar();
           }}
           onError={setError}
         />
+      )}
+
+      {!cargando && sugeridas.length > 0 && (
+        <div className="border border-line rounded-sharp bg-graphite p-4 mb-3 flex flex-col gap-2">
+          <p className="text-xs text-text-gray-light">Encontramos en el portal una causa con el mismo número que este expediente:</p>
+          {sugeridas.map((c) => (
+            <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-white break-words">{c.caratula ?? 'Sin carátula'}</div>
+                <div className="text-xs font-mono text-text-gray-light break-words">
+                  {c.numero_causa}
+                  {c.organismo ? ` · ${c.organismo}` : ''}
+                </div>
+                <div className={`text-xs ${c.certeza === 'alta' ? 'text-success' : 'text-warning'}`}>{c.motivo}</div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => vincularSugerida(c.id)} className={`${botonClases} sm:shrink-0`}>
+                Vincular
+              </Button>
+            </div>
+          ))}
+        </div>
       )}
 
       {aviso && <div className="border-l-2 border-success text-success bg-graphite px-4 py-3 rounded-sharp text-sm mb-3">{aviso}</div>}
