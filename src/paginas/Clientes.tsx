@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router';
 import { api, type Cliente } from '../api/cliente';
 import { FormularioCliente } from '../componentes/FormularioCliente';
 import { PageHeader } from '../componentes/PageHeader';
@@ -14,6 +15,7 @@ export function Clientes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const navegar = useNavigate();
 
   function cargar() {
     setCargando(true);
@@ -38,10 +40,8 @@ export function Clientes() {
 
       {mostrarFormulario && (
         <FormularioCliente
-          onGuardado={() => {
-            setMostrarFormulario(false);
-            cargar();
-          }}
+          // Después de crear un cliente se abre su ficha, donde el sistema busca sus causas en el portal.
+          onGuardado={(id) => navegar(`/clientes/${id}`)}
           onCancelar={() => setMostrarFormulario(false)}
         />
       )}

@@ -9,6 +9,7 @@ import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { EstadoBadge } from '../componentes/EstadoBadge';
+import { MarcaPortal } from '../componentes/MarcaPortal';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -165,6 +166,7 @@ function FilaExpediente({
                 Dar de baja
               </Button>
             )}
+            <MarcaPortal causas={expediente.causas_portal} pendientes={expediente.novedades_pendientes} />
             <EstadoBadge
               estado={expediente.estado}
               colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
