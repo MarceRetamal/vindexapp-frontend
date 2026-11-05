@@ -4,6 +4,7 @@ import { api, type Cliente } from '../api/cliente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
+import { PanelCausasCliente } from '../componentes/PanelCausasCliente';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -114,6 +115,8 @@ export function ClienteDetalle() {
               </div>
             )}
           </section>
+
+          <PanelCausasCliente clienteId={id!} />
         </div>
 
         <div className="flex flex-col gap-6">

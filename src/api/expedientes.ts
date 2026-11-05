@@ -18,10 +18,15 @@ export interface Expediente {
   creado_en: number;
   cliente_nombre: string;
   cliente_apellido: string;
+  /** Solo en el listado: causas del portal vinculadas y novedades suyas sin revisar. */
+  causas_portal?: number;
+  novedades_pendientes?: number;
 }
 
 export const api = {
   listarExpedientes: () => pedido<Expediente[]>(`/expedientes?estudio_id=${ESTUDIO_ID}`),
+
+  listarDeCliente: (clienteId: string) => pedido<Expediente[]>(`/expedientes?cliente_id=${encodeURIComponent(clienteId)}`),
 
   obtenerExpediente: (id: string) =>
     pedido<Expediente>(`/expedientes/${id}?estudio_id=${ESTUDIO_ID}`),

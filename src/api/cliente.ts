@@ -28,6 +28,16 @@ export interface DatosCliente {
   notas?: string;
 }
 
+export interface CausaSugerida {
+  id: string;
+  numero_causa: string;
+  caratula: string | null;
+  organismo: string | null;
+  fecha_inicio: string | null;
+  certeza: 'alta' | 'posible';
+  motivo: string;
+}
+
 export const api = {
   listarClientes: () => pedido<Cliente[]>(`/clientes?estudio_id=${ESTUDIO_ID}`),
 
@@ -38,6 +48,16 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ estudio_id: ESTUDIO_ID, ...datos }),
     }),
+
+  /** Causas importadas del portal, todavía sin vincular, cuya carátula puede ser de este cliente. */
+  causasSugeridas: (id: string) => pedido<CausaSugerida[]>(`/clientes/${id}/causas-sugeridas`),
+
+  /** Crea un expediente del cliente por cada causa, con los datos del portal, y lo vincula con ella. */
+  crearExpedientesDesdeCausas: (id: string, causaIds: string[]) =>
+    pedido<{ expedientes: { id: string; causa_portal_id: string; caratula: string; novedades_vinculadas: number }[] }>(
+      `/clientes/${id}/causas-portal`,
+      { method: 'POST', body: JSON.stringify({ causa_portal_ids: causaIds }) }
+    ),
 
   actualizarCliente: (id: string, datos: Partial<DatosCliente>) =>
     pedido<Cliente>(`/clientes/${id}`, {

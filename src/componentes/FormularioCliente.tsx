@@ -13,7 +13,8 @@ export function FormularioCliente({
   onCancelar,
 }: {
   cliente?: Cliente;
-  onGuardado: () => void;
+  /** Recibe el id del cliente (el creado, o el editado). */
+  onGuardado: (id: string) => void;
   onCancelar?: () => void;
 }) {
   const [nombre, setNombre] = useState(cliente?.nombre ?? '');
@@ -48,10 +49,11 @@ export function FormularioCliente({
     try {
       if (cliente) {
         await api.actualizarCliente(cliente.id, datos);
+        onGuardado(cliente.id);
       } else {
-        await api.crearCliente(datos);
+        const creado = await api.crearCliente(datos);
+        onGuardado(creado.id);
       }
-      onGuardado();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar el cliente.');
     } finally {
