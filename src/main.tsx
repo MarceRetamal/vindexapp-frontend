@@ -18,9 +18,10 @@ function Arranque() {
 
   useEffect(() => {
     whoami()
-      .then(({ usuario, estudio }) => {
+      .then(({ usuario, estudio, demo }) => {
         setEstudioId(estudio.id);
-        setSesion(usuario, estudio);
+        setSesion(usuario, estudio, demo === true);
+        if (demo === true && !document.title.startsWith('[Demostración]')) document.title = `[Demostración] ${document.title}`;
         setEstado('listo');
       })
       .catch((err) => {

@@ -1,12 +1,15 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { MenuIcon, SearchIcon, XIcon } from 'lucide-react';
+import { MenuIcon, PlayIcon, SearchIcon, XIcon } from 'lucide-react';
 
+import { api as demoApi, type EstadoDemo } from '../api/demo';
 import { api as novedadesApi, EVENTO_NOVEDADES } from '../api/novedades';
 import { sesionActual } from '../api/whoami';
+import { entrarEnDemo } from '../lib/demo';
 import { iniciales } from '../lib/fechas';
 import { EVENTO_PALETA, GRUPOS, SECCIONES } from '../navegacion';
+import { BannerDemo } from './BannerDemo';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Isotipo, Wordmark } from './Marca';
 import { PaletaComandos } from './PaletaComandos';
@@ -61,7 +64,28 @@ export function Layout() {
     };
   }, [location.pathname]);
 
-  const { usuario, estudio } = sesionActual();
+  const { usuario, estudio, demo } = sesionActual();
+  const [estadoDemo, setEstadoDemo] = useState<EstadoDemo | null>(null);
+  const [preparandoDemo, setPreparandoDemo] = useState(false);
+  const [errorDemo, setErrorDemo] = useState<string | null>(null);
+
+  // Si el usuario puede mostrar la demostración, el menú ofrece el acceso. Si falla, simplemente no se ofrece.
+  useEffect(() => {
+    demoApi.estado().then(setEstadoDemo).catch(() => setEstadoDemo(null));
+  }, []);
+
+  async function abrirDemostracion() {
+    if (estadoDemo?.existe) return entrarEnDemo();
+    setPreparandoDemo(true);
+    setErrorDemo(null);
+    try {
+      await demoApi.restablecer();
+      entrarEnDemo();
+    } catch (e) {
+      setErrorDemo(e instanceof Error ? e.message : 'No se pudo preparar la demostración.');
+      setPreparandoDemo(false);
+    }
+  }
 
   const menu = (
     <>
@@ -124,18 +148,34 @@ export function Layout() {
       </nav>
 
       {usuario && (
-        <div className="flex items-center gap-3 border-t border-line px-6 py-5">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-silver-deep/60 bg-graphite text-xs font-bold tracking-wider text-silver"
-            aria-hidden="true"
-          >
-            {iniciales(usuario.nombre, usuario.apellido)}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-[13px] font-bold text-white">
-              {usuario.nombre} {usuario.apellido}
+        <div className="border-t border-line">
+          {!demo && estadoDemo?.puede_gestionar && (
+            <div className="px-3 pt-4">
+              <button
+                type="button"
+                onClick={abrirDemostracion}
+                disabled={preparandoDemo}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[13px] text-silver-deep transition-colors hover:bg-white/[0.03] hover:text-white disabled:opacity-60"
+              >
+                <PlayIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.6} />
+                {preparandoDemo ? 'Preparando la demostración…' : estadoDemo.existe ? 'Ver la demostración' : 'Preparar la demostración'}
+              </button>
+              {errorDemo && <p className="px-3 pt-1 text-[11px] text-warning">{errorDemo}</p>}
             </div>
-            <div className="truncate text-[11px] text-text-gray-light">{estudio?.nombre ?? 'Estudio jurídico'}</div>
+          )}
+          <div className="flex items-center gap-3 px-6 py-5">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-silver-deep/60 bg-graphite text-xs font-bold tracking-wider text-silver"
+              aria-hidden="true"
+            >
+              {iniciales(usuario.nombre, usuario.apellido)}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-bold text-white">
+                {usuario.nombre} {usuario.apellido}
+              </div>
+              <div className={`truncate text-[11px] ${demo ? 'font-bold text-silver' : 'text-text-gray-light'}`}>{estudio?.nombre ?? 'Estudio jurídico'}</div>
+            </div>
           </div>
         </div>
       )}
@@ -150,6 +190,7 @@ export function Layout() {
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
+        {demo && <BannerDemo />}
         {/* Celular: barra superior con la marca y el botón del menú. */}
         <header className="md:hidden sticky top-0 z-30 flex items-center justify-between border-b border-line bg-structural-black px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
           <div className="flex items-center gap-3">
