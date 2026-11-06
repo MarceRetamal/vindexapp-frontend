@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { FolderOpenIcon } from 'lucide-react';
 import { api, type Expediente } from '../api/expedientes';
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { PageHeader } from '../componentes/PageHeader';
-import { Row } from '../componentes/Row';
+import { BarraDeLista } from '../componentes/BarraDeLista';
+import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
+import { coincide } from '../lib/texto';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -17,6 +18,8 @@ import { Input } from '@/componentes/ui/input';
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
 
+type FiltroEstado = 'vigentes' | 'archivados' | 'todos';
+
 export function Expedientes() {
   const navegar = useNavigate();
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -24,6 +27,8 @@ export function Expedientes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState<FiltroEstado>('vigentes');
 
   function cargar() {
     setCargando(true);
@@ -39,11 +44,23 @@ export function Expedientes() {
 
   useEffect(cargar, []);
 
+  const vigentes = expedientes.filter((e) => e.estado !== 'Archivado');
+  const visibles = useMemo(
+    () =>
+      expedientes.filter(
+        (e) =>
+          (filtro === 'todos' || (filtro === 'archivados') === (e.estado === 'Archivado')) &&
+          coincide(busqueda, `${e.caratula} ${e.numero ?? ''} ${e.juzgado ?? ''} ${e.fuero ?? ''} ${e.cliente_apellido} ${e.cliente_nombre}`)
+      ),
+    [expedientes, filtro, busqueda]
+  );
+
   return (
     <div>
       <PageHeader
+        eyebrow="Causas"
         title="Expedientes"
-        count={expedientes.length}
+        count={vigentes.length}
         ctaLabel={mostrarFormulario ? 'Cancelar' : '+ Nuevo expediente'}
         onCta={() => setMostrarFormulario((v) => !v)}
       />
@@ -58,34 +75,48 @@ export function Expedientes() {
 
       {error && <ErrorBanner message={`No se pudo cargar el listado: ${error}`} />}
 
+      {!cargando && expedientes.length > 0 && (
+        <BarraDeLista
+          busqueda={busqueda}
+          onBusqueda={setBusqueda}
+          placeholder="Carátula, número, juzgado o cliente"
+          etiquetaBusqueda="Buscar un expediente"
+          filtro={filtro}
+          onFiltro={setFiltro}
+          etiquetaFiltro="Estado de los expedientes"
+          opciones={[
+            { valor: 'vigentes', texto: 'Vigentes', cantidad: vigentes.length },
+            { valor: 'archivados', texto: 'Archivados', cantidad: expedientes.length - vigentes.length },
+            { valor: 'todos', texto: 'Todos', cantidad: expedientes.length },
+          ]}
+        />
+      )}
+
       {cargando ? (
         <ListSkeleton rows={6} />
       ) : expedientes.length === 0 ? (
-        <EmptyState message='Todavía no hay expedientes cargados. Usá "Nuevo expediente" para agregar el primero.' />
+        <EmptyState message='Todavía no hay expedientes cargados. Usá "Nuevo expediente" para agregar el primero, o vinculá las causas que ya leyó el portal desde la ficha de un cliente.' />
+      ) : visibles.length === 0 ? (
+        <EmptyState
+          message="Ningún expediente coincide con la búsqueda."
+          accion={
+            <Button variant="ghost" onClick={() => { setBusqueda(''); setFiltro('todos'); }} className="rounded-sharp border border-line text-silver hover:text-white">
+              Ver todos los expedientes
+            </Button>
+          }
+        />
       ) : (
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-        >
-          {expedientes.map((e, i) => (
-            <FilaExpediente key={e.id} expediente={e} index={i + 1} onCambiado={cargar} />
+        <div className="flex flex-col gap-2">
+          {visibles.map((e) => (
+            <FilaExpediente key={e.id} expediente={e} onCambiado={cargar} />
           ))}
-        </motion.div>
+        </div>
       )}
     </div>
   );
 }
 
-function FilaExpediente({
-  expediente,
-  index,
-  onCambiado,
-}: {
-  expediente: Expediente;
-  index: number;
-  onCambiado: () => void;
-}) {
+function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; onCambiado: () => void }) {
   const [editando, setEditando] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,71 +151,46 @@ function FilaExpediente({
     }
   }
 
+  const detalle = [`${expediente.cliente_apellido}, ${expediente.cliente_nombre}`, expediente.numero ? `N° ${expediente.numero}` : null, expediente.fuero].filter(Boolean).join(' · ');
+
   return (
     <div>
-      <Row
-        index={index}
+      <FilaLista
         to={`/expedientes/${expediente.id}`}
-        actions={
+        inicio={
+          <BloqueIcono>
+            <FolderOpenIcon className="h-5 w-5" strokeWidth={1.5} />
+          </BloqueIcono>
+        }
+        lateral={
           <>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={procesando}
-              onClick={(e) => {
-                e.preventDefault();
-                setEditando((v) => !v);
-              }}
-              className="rounded-sharp border border-line text-text-gray-light hover:text-white"
-            >
+            <MarcaPortal causas={expediente.causas_portal} pendientes={expediente.novedades_pendientes} />
+            <EstadoBadge estado={expediente.estado} colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }} />
+          </>
+        }
+        acciones={
+          <>
+            <Button variant="ghost" size="sm" disabled={procesando} onClick={() => setEditando((v) => !v)} className="rounded-sharp border border-line text-text-gray-light hover:text-white">
               {editando ? 'Cancelar' : 'Editar'}
             </Button>
             {estaDeBaja ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={procesando}
-                onClick={(e) => {
-                  e.preventDefault();
-                  reactivar();
-                }}
-                className="rounded-sharp border border-success text-success hover:brightness-125"
-              >
+              <Button variant="ghost" size="sm" disabled={procesando} onClick={reactivar} className="rounded-sharp border border-success text-success hover:brightness-125">
                 Reactivar
               </Button>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={procesando}
-                onClick={(e) => {
-                  e.preventDefault();
-                  darDeBaja();
-                }}
-                className="rounded-sharp border border-warning text-warning hover:brightness-125"
-              >
+              <Button variant="ghost" size="sm" disabled={procesando} onClick={darDeBaja} className="rounded-sharp border border-line text-text-gray-light hover:border-warning hover:text-warning">
                 Dar de baja
               </Button>
             )}
-            <MarcaPortal causas={expediente.causas_portal} pendientes={expediente.novedades_pendientes} />
-            <EstadoBadge
-              estado={expediente.estado}
-              colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
-            />
           </>
         }
       >
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="font-bold text-white truncate">{expediente.caratula}</span>
-          <span className="text-xs text-text-gray-light font-mono truncate">
-            {expediente.cliente_apellido}, {expediente.cliente_nombre}
-            {expediente.numero ? ` · Nº ${expediente.numero}` : ''}
-            {expediente.fuero ? ` · ${expediente.fuero}` : ''}
-          </span>
-        </div>
-      </Row>
+        <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{expediente.caratula}</div>
+        <div className="mt-0.5 truncate text-xs text-text-gray-light">{detalle}</div>
+        {expediente.juzgado && <div className="truncate text-xs text-silver-deep">{expediente.juzgado}</div>}
+      </FilaLista>
 
-      {error && <div className="text-warning text-xs pb-3">{error}</div>}
+      {error && <div className="pt-2 text-xs text-warning">{error}</div>}
 
       {editando && (
         <FormularioEditarExpediente
@@ -238,7 +244,7 @@ function FormularioEditarExpediente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-4 mb-4 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor={`editar-${expediente.id}-caratula`} className={etiquetaClases}>Carátula</label>
@@ -319,7 +325,7 @@ function FormularioNuevoExpediente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       {clientes.length === 0 && (
         <div className="sm:col-span-2">

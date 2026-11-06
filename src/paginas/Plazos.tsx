@@ -4,7 +4,7 @@ import { api, type CalendarioJudicial, type Regimen, type ResultadoPlazo, type T
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
 import { api as tareasApi } from '../api/tareas';
 import { ErrorBanner } from '../componentes/ErrorBanner';
-import { Filete } from '../componentes/Filete';
+import { PageHeader } from '../componentes/PageHeader';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -46,8 +46,11 @@ export function Plazos() {
 
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Plazos</h1>
-      <Filete className="mt-5 mb-7" />
+      <PageHeader
+        eyebrow="Causas"
+        title="Plazos"
+        descripcion="Calculá un vencimiento con la norma que lo sostiene, día por día, con el calendario judicial del estudio."
+      />
 
       {error && <ErrorBanner message={error} />}
 
@@ -155,7 +158,7 @@ function Calculadora({
 
   return (
     <section className="mb-10">
-      <form onSubmit={calcular} className="border border-line rounded-sharp p-4 sm:p-5 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <form onSubmit={calcular} className="superficie p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label htmlFor="plazo-regimen" className={etiquetaClases}>Régimen</label>
           <select id="plazo-regimen" value={regimen} onChange={(e) => cambiarRegimen(e.target.value as Regimen)} className={selectClases}>
@@ -407,7 +410,7 @@ function SeccionCalendario({ calendario, onCambio }: { calendario: CalendarioJud
         {abierto ? 'Cerrar' : 'Agregar un día o actualizar la verificación'}
       </Button>
       {abierto && (
-        <div className="mt-3 border border-line rounded-sharp p-4 bg-graphite flex flex-col gap-4">
+        <div className="superficie mt-3 p-5 flex flex-col gap-4">
           <form
             className="grid grid-cols-1 sm:grid-cols-2 gap-3"
             onSubmit={(e) => {
