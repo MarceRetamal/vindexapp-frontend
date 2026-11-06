@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import { api, type Audiencia } from '../api/audiencias';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
 import { PageHeader } from '../componentes/PageHeader';
-import { Row } from '../componentes/Row';
+import { BloqueFecha } from '../componentes/BloqueFecha';
+import { Chips } from '../componentes/BarraFiltros';
+import { FilaLista } from '../componentes/FilaLista';
+import { diasEntre, hoyEnArgentina } from '../lib/fechas';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -17,12 +19,23 @@ const MODALIDADES = ['Presencial', 'Videoconferencia', 'Telefónica'] as const;
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
 
+type Filtro = 'proximas' | 'pasadas' | 'todas';
+
+const GRUPOS_AGENDA: { id: string; titulo: string; incluye: (dias: number) => boolean }[] = [
+  { id: 'cerrar', titulo: 'Para cerrar', incluye: (d) => d < 0 },
+  { id: 'hoy', titulo: 'Hoy', incluye: (d) => d === 0 },
+  { id: 'manana', titulo: 'Mañana', incluye: (d) => d === 1 },
+  { id: 'semana', titulo: 'Esta semana', incluye: (d) => d >= 2 && d <= 7 },
+  { id: 'luego', titulo: 'Más adelante', incluye: (d) => d > 7 },
+];
+
 export function Agenda() {
   const [audiencias, setAudiencias] = useState<Audiencia[]>([]);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>('proximas');
 
   function cargar() {
     setCargando(true);
@@ -39,12 +52,21 @@ export function Agenda() {
   useEffect(cargar, []);
 
   const expedientesPorId = new Map(expedientes.map((e) => [e.id, e]));
+  const hoy = hoyEnArgentina();
+  const diasDe = (a: Audiencia) => diasEntre(hoy, a.fecha.slice(0, 10));
+  // "Próximas" son las programadas: las de fechas ya pasadas van arriba, como "Para cerrar" (hay que marcarlas hechas o suspendidas).
+  const programadas = useMemo(() => audiencias.filter((a) => a.estado === 'Programada'), [audiencias]);
+  const cerradas = useMemo(() => audiencias.filter((a) => a.estado !== 'Programada'), [audiencias]);
+  const visibles = filtro === 'proximas' ? programadas : filtro === 'pasadas' ? cerradas : audiencias;
+
+  const fila = (a: Audiencia) => <FilaAudiencia key={a.id} audiencia={a} dias={diasDe(a)} expediente={expedientesPorId.get(a.expediente_id)} onCambiado={cargar} />;
 
   return (
     <div>
       <PageHeader
+        eyebrow="Hoy"
         title="Agenda"
-        count={audiencias.length}
+        count={programadas.length}
         ctaLabel={mostrarFormulario ? 'Cancelar' : '+ Nueva audiencia'}
         onCta={() => setMostrarFormulario((v) => !v)}
       />
@@ -61,26 +83,46 @@ export function Agenda() {
 
       {error && <ErrorBanner message={`No se pudo cargar el listado: ${error}`} />}
 
+      {!cargando && audiencias.length > 0 && (
+        <div className="mb-6">
+          <Chips
+            etiqueta="Audiencias a mostrar"
+            valor={filtro}
+            opciones={[
+              { valor: 'proximas', texto: 'Programadas', cantidad: programadas.length },
+              { valor: 'pasadas', texto: 'Cerradas', cantidad: cerradas.length },
+              { valor: 'todas', texto: 'Todas', cantidad: audiencias.length },
+            ]}
+            onCambio={setFiltro}
+          />
+        </div>
+      )}
+
       {cargando ? (
         <ListSkeleton rows={6} />
       ) : audiencias.length === 0 ? (
-        <EmptyState message='Todavía no hay audiencias cargadas. Usá "Nueva audiencia" para agregar la primera.' />
+        <EmptyState message='Todavía no hay audiencias cargadas. Usá "Nueva audiencia" para agregar la primera: el sistema te avisa por WhatsApp 2 horas antes.' />
+      ) : visibles.length === 0 ? (
+        <EmptyState message={filtro === 'proximas' ? 'No hay audiencias programadas.' : 'Todavía no hay audiencias cerradas.'} />
+      ) : filtro === 'proximas' ? (
+        <div className="flex flex-col gap-8">
+          {GRUPOS_AGENDA.map((g) => {
+            const delGrupo = visibles.filter((a) => g.incluye(diasDe(a)));
+            if (delGrupo.length === 0) return null;
+            return (
+              <section key={g.id} aria-label={g.titulo}>
+                <h2 className={`eyebrow mb-3 flex items-center gap-3 ${g.id === 'cerrar' ? 'text-warning' : g.id === 'hoy' ? 'text-white' : ''}`}>
+                  {g.titulo}
+                  <span className="font-light tabular-nums tracking-normal text-text-gray-light">{delGrupo.length}</span>
+                  <span className="h-px flex-1 bg-line" aria-hidden="true" />
+                </h2>
+                <div className="flex flex-col gap-2">{delGrupo.map(fila)}</div>
+              </section>
+            );
+          })}
+        </div>
       ) : (
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-        >
-          {audiencias.map((a, i) => (
-            <FilaAudiencia
-              key={a.id}
-              audiencia={a}
-              index={i + 1}
-              expediente={expedientesPorId.get(a.expediente_id)}
-              onCambiado={cargar}
-            />
-          ))}
-        </motion.div>
+        <div className="flex flex-col gap-2">{[...visibles].sort((a, b) => b.fecha.localeCompare(a.fecha)).map(fila)}</div>
       )}
     </div>
   );
@@ -88,17 +130,18 @@ export function Agenda() {
 
 function FilaAudiencia({
   audiencia,
-  index,
+  dias,
   expediente,
   onCambiado,
 }: {
   audiencia: Audiencia;
-  index: number;
+  dias: number;
   expediente?: Expediente;
   onCambiado: () => void;
 }) {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const programada = audiencia.estado === 'Programada';
 
   async function transicionar(estado: 'Realizada' | 'Suspendida' | 'Cancelada') {
     setProcesando(true);
@@ -113,49 +156,32 @@ function FilaAudiencia({
     }
   }
 
+  const boton = 'rounded-sharp border border-line text-text-gray-light hover:text-white';
+  const detalle = [audiencia.hora ? `${audiencia.hora.slice(0, 5)} hs` : null, audiencia.modalidad, audiencia.lugar].filter(Boolean).join(' · ');
+
   return (
     <div>
-      <Row
-        index={index}
-        to={expediente ? `/expedientes/${expediente.id}` : '/agenda'}
-        actions={
+      <FilaLista
+        to={expediente ? `/expedientes/${expediente.id}` : undefined}
+        resaltada={programada && dias < 0}
+        inicio={<BloqueFecha fecha={audiencia.fecha.slice(0, 10)} dias={programada ? dias : 1} hora={audiencia.hora ? audiencia.hora.slice(0, 5) : null} />}
+        lateral={
+          <EstadoBadge
+            estado={audiencia.estado}
+            colorMap={{ Programada: 'warning', Realizada: 'success', Suspendida: 'warning', Cancelada: 'neutral' }}
+          />
+        }
+        acciones={
           <>
-            {audiencia.estado === 'Programada' && (
+            {programada && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={procesando}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    transicionar('Realizada');
-                  }}
-                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
-                >
+                <Button variant="ghost" size="sm" disabled={procesando} onClick={() => transicionar('Realizada')} className={boton}>
                   Realizada
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={procesando}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    transicionar('Suspendida');
-                  }}
-                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
-                >
+                <Button variant="ghost" size="sm" disabled={procesando} onClick={() => transicionar('Suspendida')} className={boton}>
                   Suspender
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={procesando}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    transicionar('Cancelada');
-                  }}
-                  className="rounded-sharp border border-line text-text-gray-light hover:text-white"
-                >
+                <Button variant="ghost" size="sm" disabled={procesando} onClick={() => transicionar('Cancelada')} className={boton}>
                   Cancelar
                 </Button>
               </>
@@ -166,35 +192,15 @@ function FilaAudiencia({
               alEliminar={onCambiado}
               alFallar={setError}
             />
-            <EstadoBadge
-              estado={audiencia.estado}
-              colorMap={{
-                Programada: 'warning',
-                Realizada: 'success',
-                Suspendida: 'warning',
-                Cancelada: 'neutral',
-              }}
-            />
           </>
         }
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-xs text-text-gray-light font-mono whitespace-nowrap">
-            {audiencia.fecha}
-            {audiencia.hora ? ` ${audiencia.hora}` : ''}
-          </span>
-          <div className="min-w-0">
-            <div className="font-bold text-white truncate">{audiencia.tipo}</div>
-            <div className="text-xs text-text-gray-light truncate">
-              {expediente ? expediente.caratula : 'Expediente no encontrado'}
-              {audiencia.modalidad ? ` · ${audiencia.modalidad}` : ''}
-              {audiencia.lugar ? ` · ${audiencia.lugar}` : ''}
-            </div>
-          </div>
-        </div>
-      </Row>
+        <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{audiencia.tipo}</div>
+        <div className="mt-0.5 truncate text-xs text-text-gray-light">{expediente ? expediente.caratula : 'Expediente no encontrado'}</div>
+        {detalle && <div className="truncate text-xs text-silver-deep">{detalle}</div>}
+      </FilaLista>
 
-      {error && <div className="text-warning text-xs pb-3">{error}</div>}
+      {error && <div className="pt-2 text-xs text-warning">{error}</div>}
     </div>
   );
 }
@@ -241,7 +247,7 @@ function FormularioNuevaAudiencia({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       {expedientes.length === 0 && (
         <div className="sm:col-span-2">

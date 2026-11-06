@@ -3,7 +3,7 @@ import { api, type ResultadoLiquidacion, type TipoExtincion } from '../api/liqui
 import { Input } from '@/componentes/ui/input';
 import { Button } from '@/componentes/ui/button';
 import { ErrorBanner } from '@/componentes/ErrorBanner';
-import { Filete } from '../componentes/Filete';
+import { PageHeader } from '../componentes/PageHeader';
 
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
@@ -78,18 +78,15 @@ export function Liquidaciones() {
 
   return (
     <div>
-      <header className="mb-7">
-        <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Liquidaciones</h1>
-        <Filete className="mt-5 mb-4" />
-        <p className="text-text-gray-light text-sm mt-1">
-          Casas particulares (Ley 26.844) — despido sin causa o indirecto.
-          Los regímenes de LCT y Construcción todavía no están disponibles.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Estudio"
+        title="Liquidaciones"
+        descripcion="Casas particulares (Ley 26.844): despido sin causa o indirecto. Los regímenes de LCT y Construcción todavía no están disponibles."
+      />
 
       <form
         onSubmit={enviar}
-        className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+        className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
         <div className="flex flex-col gap-1">
           <label htmlFor="liq-fecha-ingreso" className={etiquetaClases}>
@@ -220,7 +217,7 @@ export function Liquidaciones() {
 
 function ResultadoLiquidacionCard({ resultado }: { resultado: ResultadoLiquidacion }) {
   return (
-    <div className="border border-line rounded-sharp p-5 bg-graphite">
+    <div className="superficie p-5">
       <div className="mb-4 text-sm text-text-gray-light">
         Antigüedad: {resultado.antiguedad.aniosCompletos} años, {resultado.antiguedad.mesesRestantes} meses
         ({resultado.antiguedad.diasTotales} días totales)
