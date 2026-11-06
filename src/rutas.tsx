@@ -12,6 +12,7 @@ import { Reportes } from './paginas/Reportes';
 import { Novedades } from './paginas/Novedades';
 import { Tareas } from './paginas/Tareas';
 import { Plazos } from './paginas/Plazos';
+import { Configuracion } from './paginas/Configuracion';
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
       { path: 'agenda', element: <Agenda /> },
       { path: 'liquidaciones', element: <Liquidaciones /> },
       { path: 'reportes', element: <Reportes /> },
+      { path: 'configuracion', element: <Configuracion /> },
     ],
   },
 ]);

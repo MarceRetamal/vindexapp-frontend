@@ -16,7 +16,7 @@ interface Paso {
 
 /**
  * Qué hacer primero en un estudio vacío. Cada paso se marca solo cuando ya está hecho: no hay nada que tildar a mano.
- * Los dos últimos (portal y avisos por WhatsApp) no se configuran desde el panel: dependen de quien instaló el sistema.
+ * Los dos últimos (portal y avisos por WhatsApp) los carga el propio titular en Configuración.
  */
 export function PrimerosPasos() {
   const [pasos, setPasos] = useState<Paso[] | null>(null);
@@ -25,13 +25,13 @@ export function PrimerosPasos() {
     Promise.allSettled([clientesApi.listarClientes(), expedientesApi.listarExpedientes(), portalApi.obtenerEstado(), alertasApi.obtenerEstado()]).then(([c, e, p, w]) => {
       const clientes = c.status === 'fulfilled' ? c.value.length : 0;
       const expedientes = e.status === 'fulfilled' ? e.value.length : 0;
-      const portal = p.status === 'fulfilled' && p.value.configurado && p.value.causas_importadas > 0;
+      const portal = p.status === 'fulfilled' && p.value.configurado;
       const whatsapp = w.status === 'fulfilled' && w.value.whatsapp.configurado && w.value.whatsapp.estudio_correcto;
       setPasos([
         { titulo: 'Cargá tu primer cliente', detalle: 'Con su teléfono y mail, para tener a mano WhatsApp, llamada y mail desde su ficha.', hecho: clientes > 0, a: '/clientes' },
         { titulo: 'Cargá un expediente', detalle: 'Carátula, número y juzgado. Si el portal ya lo leyó, lo vinculás desde la ficha del cliente.', hecho: expedientes > 0, a: '/expedientes' },
-        { titulo: 'Conectá el portal de la SCBA', detalle: 'El sistema lee las notificaciones solo y te propone el plazo de cada una. La conexión la deja lista quien instaló el sistema.', hecho: portal },
-        { titulo: 'Activá los avisos por WhatsApp', detalle: 'Un resumen a la mañana, un recordatorio antes de cada audiencia y lo que vence hoy a la tarde. También lo deja listo quien instaló el sistema.', hecho: whatsapp },
+        { titulo: 'Conectá el portal de la SCBA', detalle: 'Cargás tu domicilio electrónico y tu contraseña una sola vez; el sistema lee las notificaciones solo y te propone el plazo de cada una.', hecho: portal, a: '/configuracion' },
+        { titulo: 'Activá los avisos por WhatsApp', detalle: 'Cargás tu número y lo confirmás con un código. Un resumen a la mañana, un recordatorio antes de cada audiencia y lo que vence hoy a la tarde.', hecho: whatsapp, a: '/configuracion' },
       ]);
     });
   }, []);
