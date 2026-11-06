@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, CalendarDaysIcon, CheckIcon, HourglassIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react';
-import { apiAgenda, type AgendaDia, type ClaseItemDia, type ItemDia } from '../api/dashboard';
+import { api as apiDashboard, apiAgenda, type AgendaDia, type ClaseItemDia, type ItemDia } from '../api/dashboard';
 import { api as novedadesApi, type Novedad, type PropuestaPlazo } from '../api/novedades';
 import { enlaceDeRevision } from '../componentes/PropuestaPlazo';
 import { api as portalApi, type EstadoPortal } from '../api/portal';
@@ -13,6 +13,7 @@ import { BloqueFecha } from '../componentes/BloqueFecha';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+import { PrimerosPasos } from '../componentes/PrimerosPasos';
 
 const ICONO_CLASE: Record<ClaseItemDia, { icono: LucideIcon; etiqueta: string }> = {
   plazo: { icono: HourglassIcon, etiqueta: 'Plazo' },
@@ -33,6 +34,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [novedades, setNovedades] = useState<{ lista: Novedad[]; total: number } | null>(null);
   const [portal, setPortal] = useState<EstadoPortal | null>(null);
+  const [expedientesActivos, setExpedientesActivos] = useState<number | null>(null);
   const { usuario } = sesionActual();
 
   useEffect(() => {
@@ -49,6 +51,11 @@ export function Dashboard() {
       .obtenerEstado()
       .then(setPortal)
       .catch(() => setPortal(null));
+    // Con cero expedientes el estudio es nuevo: en vez de "agenda despejada" se muestran los primeros pasos.
+    apiDashboard
+      .obtenerDashboard()
+      .then((d) => setExpedientesActivos(d.expedientesActivos))
+      .catch(() => setExpedientesActivos(null));
   }, []);
 
   const resumen = useMemo(() => {
@@ -82,7 +89,13 @@ export function Dashboard() {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section aria-label="Agenda" className="min-w-0">
-          {!agenda && !error ? <ListSkeleton rows={5} /> : agenda && <ListaAgenda items={agenda.items} />}
+          {!agenda && !error ? (
+            <ListSkeleton rows={5} />
+          ) : agenda && agenda.items.length === 0 && expedientesActivos === 0 ? (
+            <PrimerosPasos />
+          ) : (
+            agenda && <ListaAgenda items={agenda.items} />
+          )}
         </section>
 
         <aside className="flex min-w-0 flex-col gap-5">
