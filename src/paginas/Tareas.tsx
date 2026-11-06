@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { motion } from 'framer-motion';
+import { CheckIcon } from 'lucide-react';
 import { api, type TareaListado } from '../api/tareas';
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { api as alertasApi, mensajeDeError } from '../api/alertas';
@@ -9,7 +9,10 @@ import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { BotonEliminar } from '../componentes/BotonEliminar';
-import { EstadoBadge } from '../componentes/EstadoBadge';
+import { BloqueFecha } from '../componentes/BloqueFecha';
+import { Chips } from '../componentes/BarraFiltros';
+import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
+import { diasEntre, hoyEnArgentina } from '../lib/fechas';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 import { Textarea } from '@/componentes/ui/textarea';
@@ -23,15 +26,6 @@ const botonClases = 'rounded-sharp border border-line text-text-gray-light hover
 
 type FiltroEstado = 'pendientes' | 'completadas' | 'todas';
 type FiltroOrigen = 'todas' | 'extrajudiciales' | 'judiciales';
-
-function hoyEnArgentina(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
-}
-
-function formatearFecha(fechaISO: string): string {
-  const [anio, mes, dia] = fechaISO.slice(0, 10).split('-');
-  return `${dia}/${mes}/${anio}`;
-}
 
 export function Tareas() {
   const [tareas, setTareas] = useState<TareaListado[]>([]);
@@ -68,6 +62,7 @@ export function Tareas() {
   return (
     <div>
       <PageHeader
+        eyebrow="Hoy"
         title="Tareas"
         count={pendientes.length}
         ctaLabel={mostrarFormulario ? 'Cancelar' : '+ Nueva tarea'}
@@ -85,30 +80,28 @@ export function Tareas() {
         />
       )}
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-6">
-        <Pestanas
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <Chips
           etiqueta="Estado de las tareas"
           valor={filtroEstado}
           opciones={[
-            ['pendientes', 'Pendientes'],
-            ['completadas', 'Completadas'],
-            ['todas', 'Todas'],
+            { valor: 'pendientes', texto: 'Pendientes', cantidad: pendientes.length },
+            { valor: 'completadas', texto: 'Completadas', cantidad: tareas.length - pendientes.length },
+            { valor: 'todas', texto: 'Todas', cantidad: tareas.length },
           ]}
           onCambio={setFiltroEstado}
         />
-        <Pestanas
+        <Chips
           etiqueta="Origen de las tareas"
           valor={filtroOrigen}
           opciones={[
-            ['todas', 'Todas'],
-            ['extrajudiciales', 'Extrajudiciales'],
-            ['judiciales', 'De expedientes'],
+            { valor: 'todas', texto: 'Todas' },
+            { valor: 'extrajudiciales', texto: 'Extrajudiciales' },
+            { valor: 'judiciales', texto: 'De expedientes' },
           ]}
           onCambio={setFiltroOrigen}
         />
       </div>
-
-      <ResumenAgenda onError={setError} />
 
       {error && <ErrorBanner message={`No se pudo completar la operación: ${error}`} />}
 
@@ -123,16 +116,12 @@ export function Tareas() {
           }
         />
       ) : (
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-        >
-          {visibles.map((t) => (
-            <FilaTarea key={t.id} tarea={t} clientes={clientes} onCambiado={cargar} onError={setError} />
-          ))}
-        </motion.div>
+        <ListaTareas tareas={visibles} agrupar={filtroEstado === 'pendientes'} clientes={clientes} onCambiado={cargar} onError={setError} />
       )}
+
+      <div className="mt-12 border-t border-line pt-6">
+        <ResumenAgenda onError={setError} />
+      </div>
     </div>
   );
 }
@@ -185,34 +174,59 @@ function ResumenAgenda({ onError }: { onError: (mensaje: string | null) => void 
   );
 }
 
-function Pestanas<T extends string>({
-  etiqueta,
-  valor,
-  opciones,
-  onCambio,
+const GRUPOS_TAREA: { id: string; titulo: string; incluye: (dias: number | null) => boolean }[] = [
+  { id: 'vencidas', titulo: 'Vencidas', incluye: (d) => d !== null && d < 0 },
+  { id: 'hoy', titulo: 'Hoy', incluye: (d) => d === 0 },
+  { id: 'semana', titulo: 'Esta semana', incluye: (d) => d !== null && d >= 1 && d <= 7 },
+  { id: 'luego', titulo: 'Más adelante', incluye: (d) => d !== null && d > 7 },
+  { id: 'sinfecha', titulo: 'Sin fecha', incluye: (d) => d === null },
+];
+
+/** Las tareas pendientes se agrupan por urgencia, como en Mi día; el resto, en una sola lista. */
+function ListaTareas({
+  tareas,
+  agrupar,
+  clientes,
+  onCambiado,
+  onError,
 }: {
-  etiqueta: string;
-  valor: T;
-  opciones: [T, string][];
-  onCambio: (v: T) => void;
+  tareas: TareaListado[];
+  agrupar: boolean;
+  clientes: Cliente[];
+  onCambiado: () => void;
+  onError: (mensaje: string | null) => void;
 }) {
+  const hoy = hoyEnArgentina();
+  const diasDe = (t: TareaListado) => (t.fecha_limite ? diasEntre(hoy, t.fecha_limite.slice(0, 10)) : null);
+  if (!agrupar) {
+    return (
+      <div className="flex flex-col gap-2">
+        {tareas.map((t) => (
+          <FilaTarea key={t.id} tarea={t} clientes={clientes} onCambiado={onCambiado} onError={onError} />
+        ))}
+      </div>
+    );
+  }
   return (
-    <div className="flex flex-wrap gap-1" role="tablist" aria-label={etiqueta}>
-      {opciones.map(([v, texto]) => (
-        <Button
-          key={v}
-          role="tab"
-          aria-selected={valor === v}
-          variant="ghost"
-          size="sm"
-          onClick={() => onCambio(v)}
-          className={`rounded-sharp border ${
-            valor === v ? 'border-silver text-white font-bold' : 'border-line text-text-gray-light hover:text-white'
-          }`}
-        >
-          {texto}
-        </Button>
-      ))}
+    <div className="flex flex-col gap-8">
+      {GRUPOS_TAREA.map((g) => {
+        const delGrupo = tareas.filter((t) => g.incluye(diasDe(t)));
+        if (delGrupo.length === 0) return null;
+        return (
+          <section key={g.id} aria-label={g.titulo}>
+            <h2 className={`eyebrow mb-3 flex items-center gap-3 ${g.id === 'vencidas' ? 'text-warning' : g.id === 'hoy' ? 'text-white' : ''}`}>
+              {g.titulo}
+              <span className="font-light tabular-nums tracking-normal text-text-gray-light">{delGrupo.length}</span>
+              <span className="h-px flex-1 bg-line" aria-hidden="true" />
+            </h2>
+            <div className="flex flex-col gap-2">
+              {delGrupo.map((t) => (
+                <FilaTarea key={t.id} tarea={t} clientes={clientes} onCambiado={onCambiado} onError={onError} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -232,10 +246,9 @@ function FilaTarea({
   const [editando, setEditando] = useState(false);
 
   const completada = tarea.estado === 'Completada';
-  const hoy = hoyEnArgentina();
-  const vencida = !completada && tarea.fecha_limite !== null && tarea.fecha_limite < hoy;
-  const venceHoy = !completada && tarea.fecha_limite === hoy;
+  const dias = tarea.fecha_limite ? diasEntre(hoyEnArgentina(), tarea.fecha_limite.slice(0, 10)) : null;
   const cliente = tarea.cliente_apellido ? `${tarea.cliente_apellido}, ${tarea.cliente_nombre ?? ''}` : null;
+  const contexto = [tarea.expediente_id ? null : (tarea.tipo ?? 'Extrajudicial'), cliente].filter(Boolean).join(' · ');
 
   async function cambiarEstado() {
     setProcesando(true);
@@ -251,59 +264,47 @@ function FilaTarea({
   }
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className={`py-4 border-b border-line ${vencida ? 'border-l-2 border-l-warning pl-3' : ''}`}
-    >
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-silver-deep border border-line rounded-sharp px-2 py-0.5">
-              {tarea.expediente_id ? 'Expediente' : (tarea.tipo ?? 'Extrajudicial')}
-            </span>
-            {vencida && <EstadoBadge estado="Vencida" colorMap={{ Vencida: 'warning' }} />}
-            {venceHoy && <EstadoBadge estado="Vence hoy" colorMap={{ 'Vence hoy': 'warning' }} />}
-            {completada && <EstadoBadge estado="Completada" colorMap={{ Completada: 'success' }} />}
-          </div>
-          <div className={`font-medium break-words ${completada ? 'text-text-gray-light line-through' : 'text-white'}`}>
-            {tarea.titulo}
-          </div>
-          {tarea.expediente_id && (
-            <Link
-              to={`/expedientes/${tarea.expediente_id}`}
-              className="text-xs text-text-gray-light hover:text-white underline-offset-4 hover:underline break-words"
-            >
-              {tarea.expediente_caratula ?? 'Ver expediente'}
-            </Link>
-          )}
-          {cliente && <div className="text-xs text-text-gray-light">Cliente: {cliente}</div>}
-          {tarea.descripcion && <p className="text-sm text-silver whitespace-pre-wrap break-words">{tarea.descripcion}</p>}
-          {tarea.fecha_limite && (
-            <div className={`text-xs font-mono ${vencida || venceHoy ? 'text-warning' : 'text-text-gray-light'}`}>
-              Fecha límite {formatearFecha(tarea.fecha_limite)}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
-          <Button variant="ghost" size="sm" disabled={procesando} onClick={cambiarEstado} className={botonClases}>
-            {completada ? 'Volver a pendiente' : 'Marcar hecha'}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setEditando((v) => !v)} className={botonClases}>
-            {editando ? 'Cancelar edición' : 'Editar'}
-          </Button>
-          <BotonEliminar
-            descripcion={`la tarea "${tarea.titulo}"`}
-            eliminar={() => api.eliminarTarea(tarea.id)}
-            alEliminar={onCambiado}
-            alFallar={onError}
-          />
-        </div>
-      </div>
+    <div>
+      <FilaLista
+        resaltada={!completada && dias !== null && dias < 0}
+        accionesVisibles
+        inicio={
+          completada ? (
+            <BloqueIcono>
+              <CheckIcon className="h-5 w-5 text-success" strokeWidth={1.8} />
+            </BloqueIcono>
+          ) : tarea.fecha_limite && dias !== null ? (
+            <BloqueFecha fecha={tarea.fecha_limite.slice(0, 10)} dias={dias} />
+          ) : (
+            <BloqueIcono>
+              <span className="text-[11px] font-bold tracking-[0.12em] text-silver-deep">S/F</span>
+            </BloqueIcono>
+          )
+        }
+        acciones={
+          <>
+            <Button variant="ghost" size="sm" disabled={procesando} onClick={cambiarEstado} className={botonClases}>
+              {completada ? 'Volver a pendiente' : 'Marcar hecha'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditando((v) => !v)} className={botonClases}>
+              {editando ? 'Cancelar edición' : 'Editar'}
+            </Button>
+            <BotonEliminar descripcion={`la tarea "${tarea.titulo}"`} eliminar={() => api.eliminarTarea(tarea.id)} alEliminar={onCambiado} alFallar={onError} />
+          </>
+        }
+      >
+        <div className={`line-clamp-2 text-[15px] font-bold leading-snug ${completada ? 'text-text-gray-light line-through' : 'text-white'}`}>{tarea.titulo}</div>
+        {tarea.expediente_id && (
+          <Link to={`/expedientes/${tarea.expediente_id}`} className="mt-0.5 block truncate text-xs text-text-gray-light underline-offset-4 hover:text-white hover:underline">
+            {tarea.expediente_caratula ?? 'Ver expediente'}
+          </Link>
+        )}
+        {contexto && <div className="mt-0.5 truncate text-xs text-text-gray-light">{contexto}</div>}
+        {tarea.descripcion && <p className="mt-1 line-clamp-2 text-xs text-silver-deep">{tarea.descripcion}</p>}
+      </FilaLista>
 
       {editando && (
-        <div className="mt-3">
+        <div className="mt-2">
           <FormularioTarea
             tarea={tarea}
             clientes={clientes}
@@ -315,7 +316,7 @@ function FilaTarea({
           />
         </div>
       )}
-    </motion.article>
+    </div>
   );
 }
 
@@ -373,7 +374,7 @@ function FormularioTarea({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-4 sm:p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor={`${prefijo}-titulo`} className={etiquetaClases}>Qué hay que hacer</label>

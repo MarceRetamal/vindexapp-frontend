@@ -1,26 +1,37 @@
 import { Button } from '@/componentes/ui/button'
-import { Filete } from './Filete'
 
+/**
+ * Encabezado de una pantalla: el rótulo de la sección arriba, el título grande y, si corresponde, la cantidad y la
+ * acción principal. `count`, `ctaLabel` y `onCta` son opcionales para las pantallas que no listan ni crean nada.
+ */
 export function PageHeader({
   title,
+  eyebrow,
+  descripcion,
   count,
   ctaLabel,
   onCta,
   ctaDisabled,
 }: {
   title: string
-  count: number
-  ctaLabel: string
-  onCta: () => void
+  eyebrow?: string
+  descripcion?: string
+  count?: number
+  ctaLabel?: string
+  onCta?: () => void
   ctaDisabled?: boolean
 }) {
   return (
-    <div className="mb-9">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">
-          {title}{' '}
-          <span className="text-text-gray-light font-light normal-case tracking-normal tabular-nums">({count})</span>
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+      <div className="min-w-0">
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1 className="mt-1.5 flex items-baseline gap-3 text-[28px] font-black leading-tight text-white sm:text-[32px]">
+          {title}
+          {count !== undefined && <span className="text-base font-light tabular-nums text-text-gray-light">{count}</span>}
         </h1>
+        {descripcion && <p className="mt-1.5 max-w-2xl text-sm text-silver-deep">{descripcion}</p>}
+      </div>
+      {ctaLabel && onCta && (
         <Button
           onClick={onCta}
           disabled={ctaDisabled}
@@ -28,8 +39,7 @@ export function PageHeader({
         >
           {ctaLabel}
         </Button>
-      </div>
-      <Filete className="mt-5" />
+      )}
     </div>
   )
 }

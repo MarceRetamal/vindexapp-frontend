@@ -64,7 +64,7 @@ export function FormularioCliente({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="cliente-nombre" className={etiquetaClases}>Nombre</label>
