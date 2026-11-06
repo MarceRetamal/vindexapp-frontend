@@ -37,7 +37,7 @@ export function FilaLista({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`superficie group flex flex-wrap items-center gap-x-4 gap-y-3 p-3.5 transition-colors hover:bg-graphite-raised ${resaltada ? 'border-l-2 border-l-warning' : 'hover:border-silver-deep'}`}
+      className={`superficie group relative flex flex-wrap items-center gap-x-4 gap-y-3 p-3.5 transition-colors hover:bg-graphite-raised ${resaltada ? 'border-l-2 border-l-warning' : 'hover:border-silver-deep'}`}
     >
       {to ? (
         <Link to={to} className="flex min-w-0 flex-1 basis-60 items-center gap-4 focus-visible:outline-none">
@@ -46,11 +46,22 @@ export function FilaLista({
       ) : (
         <div className="flex min-w-0 flex-1 basis-60 items-center gap-4">{cuerpo}</div>
       )}
-      {lateral && <div className="flex flex-wrap items-center gap-2">{lateral}</div>}
+      {lateral && (
+        <div
+          className={`flex flex-wrap items-center gap-2 lg:ml-auto ${
+            acciones && !accionesVisibles ? 'lg:transition-opacity lg:group-focus-within:opacity-0 lg:group-hover:opacity-0' : ''
+          }`}
+        >
+          {lateral}
+        </div>
+      )}
       {acciones && (
         <div
           className={`flex w-full flex-wrap items-center gap-2 lg:w-auto ${
-            accionesVisibles ? '' : 'lg:opacity-0 lg:transition-opacity lg:group-focus-within:opacity-100 lg:group-hover:opacity-100'
+            accionesVisibles
+              ? ''
+              : // En pantallas anchas aparecen encima del estado, sin ocuparle lugar: así el estado queda alineado en todas las filas.
+                'lg:pointer-events-none lg:absolute lg:right-11 lg:top-1/2 lg:-translate-y-1/2 lg:opacity-0 lg:transition-opacity lg:group-focus-within:pointer-events-auto lg:group-focus-within:opacity-100 lg:group-hover:pointer-events-auto lg:group-hover:opacity-100'
           }`}
         >
           {acciones}

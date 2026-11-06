@@ -290,7 +290,7 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
 
       {/* Ficha pendiente de archivar */}
       {archivoPendiente && (
-        <div className="border border-line rounded-sharp bg-graphite p-4">
+        <div className="superficie p-5">
           <div className="flex justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-semibold text-white break-all">
@@ -381,7 +381,7 @@ export function PanelDocumentos({ expedienteId, clienteId }: Props) {
 
         {documentos !== null && documentos.length === 0 && (
           <p className="text-sm text-text-gray-light italic">
-            Todavía no se archivó ningún documento en este expediente.
+            Todavía no se archivó ningún documento {expedienteId ? 'en este expediente' : 'de este cliente'}.
           </p>
         )}
 

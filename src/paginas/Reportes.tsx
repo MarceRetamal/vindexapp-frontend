@@ -5,7 +5,7 @@ import { api, type ReporteExpedientes, type ReportePresupuestos } from '../api/r
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
-import { Filete } from '../componentes/Filete';
+import { PageHeader } from '../componentes/PageHeader';
 
 const formateadorPesos = new Intl.NumberFormat('es-AR', {
   style: 'currency',
@@ -30,8 +30,7 @@ function hoyISO(): string {
 export function Reportes() {
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white">Reportes</h1>
-      <Filete className="mt-5 mb-9" />
+      <PageHeader eyebrow="Estudio" title="Reportes" descripcion="Cómo viene la cartera de causas y los honorarios del estudio." />
 
       <div className="flex flex-col gap-12">
         <SeccionExpedientes />
@@ -58,7 +57,7 @@ function SeccionExpedientes() {
 
   return (
     <section>
-      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver mb-4">Expedientes</h2>
+      <h2 className="eyebrow mb-4 text-silver">Expedientes</h2>
 
       {error && <ErrorBanner message={`No se pudo cargar el reporte: ${error}`} />}
 
@@ -129,7 +128,7 @@ function SeccionPresupuestos() {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Presupuestos</h2>
+        <h2 className="eyebrow text-silver">Presupuestos</h2>
         <div className="flex items-center gap-2 text-xs text-text-gray-light">
           <label className="flex items-center gap-1.5">
             Desde
@@ -161,19 +160,19 @@ function SeccionPresupuestos() {
       ) : datos ? (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-line rounded-sharp bg-graphite p-4">
+            <div className="superficie p-5">
               <div className="text-2xl font-black text-white">
                 {formateadorPesos.format((datos.totalFirmadoCentavos ?? 0) / 100)}
               </div>
               <div className="text-xs text-text-gray-light mt-1">Total firmado</div>
             </div>
-            <div className="border border-line rounded-sharp bg-graphite p-4">
+            <div className="superficie p-5">
               <div className="text-2xl font-black text-white">
                 {formateadorPesos.format((datos.totalPendienteCentavos ?? 0) / 100)}
               </div>
               <div className="text-xs text-text-gray-light mt-1">Total pendiente</div>
             </div>
-            <div className="border border-line rounded-sharp bg-graphite p-4">
+            <div className="superficie p-5">
               <div className="text-2xl font-black text-white">
                 {datos.tasaConversion == null ? 'Sin datos' : `${Math.round(datos.tasaConversion * 100)}%`}
               </div>
@@ -199,7 +198,7 @@ function Desglose({ titulo, items }: { titulo: string; items: { etiqueta: string
   const max = Math.max(1, ...items.map((i) => i.valor));
 
   return (
-    <div className="border border-line rounded-sharp bg-graphite p-4">
+    <div className="superficie p-5">
       <div className="text-xs text-text-gray-light mb-3">{titulo}</div>
       {items.length === 0 ? (
         <p className="text-sm text-text-gray-light italic m-0">Sin datos</p>
@@ -233,7 +232,7 @@ function DesglosePresupuestos({
   const max = Math.max(1, ...items.map((i) => i.montoTotal));
 
   return (
-    <div className="border border-line rounded-sharp bg-graphite p-4 flex flex-col gap-3">
+    <div className="superficie p-5 flex flex-col gap-3">
       {items.map((i) => (
         <div key={i.estado}>
           <div className="flex items-baseline justify-between text-xs mb-1">

@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { FileTextIcon } from 'lucide-react';
 import { api, type Presupuesto } from '../api/presupuestos';
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
 import { PageHeader } from '../componentes/PageHeader';
-import { Row } from '../componentes/Row';
+import { BarraDeLista } from '../componentes/BarraDeLista';
+import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
+import { coincide } from '../lib/texto';
+import { fechaCorta } from '../lib/fechas';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -18,6 +21,10 @@ const FORMATO_MONTO = new Intl.NumberFormat('es-AR', { style: 'currency', curren
 const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-silver';
 const etiquetaClases = 'text-xs text-text-gray-light';
 
+type Filtro = 'todos' | 'encurso' | 'firmados' | 'cerrados';
+
+const EN_CURSO: Presupuesto['estado'][] = ['borrador', 'enviado'];
+
 export function Presupuestos() {
   const [presupuestos, setPresupuestos] = useState<Presupuesto[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -25,6 +32,8 @@ export function Presupuestos() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
 
   function cargar() {
     setCargando(true);
@@ -42,10 +51,31 @@ export function Presupuestos() {
   useEffect(cargar, []);
 
   const clientesPorId = new Map(clientes.map((c) => [c.id, c]));
+  const nombreDe = (p: Presupuesto) => {
+    const c = p.cliente_id ? clientesPorId.get(p.cliente_id) : undefined;
+    return c ? `${c.apellido}, ${c.nombre}` : (p.contacto_nombre ?? '');
+  };
+  const suma = (lista: Presupuesto[]) => lista.reduce((total, p) => total + p.monto, 0);
+  const firmados = presupuestos.filter((p) => p.estado === 'firmado');
+  const enCurso = presupuestos.filter((p) => EN_CURSO.includes(p.estado));
+  const cerrados = presupuestos.filter((p) => p.estado === 'rechazado' || p.estado === 'vencido');
+
+  const visibles = useMemo(
+    () =>
+      presupuestos.filter(
+        (p) =>
+          (filtro === 'todos' || (filtro === 'firmados' ? p.estado === 'firmado' : filtro === 'encurso' ? EN_CURSO.includes(p.estado) : p.estado === 'rechazado' || p.estado === 'vencido')) &&
+          coincide(busqueda, `${p.concepto} ${nombreDe(p)}`)
+      ),
+    // nombreDe depende de los clientes cargados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [presupuestos, clientes, filtro, busqueda]
+  );
 
   return (
     <div>
       <PageHeader
+        eyebrow="Estudio"
         title="Presupuestos"
         count={presupuestos.length}
         ctaLabel={mostrarFormulario ? 'Cancelar' : '+ Nuevo presupuesto'}
@@ -64,41 +94,71 @@ export function Presupuestos() {
 
       {error && <ErrorBanner message={`No se pudo cargar el listado: ${error}`} />}
 
+      {!cargando && presupuestos.length > 0 && (
+        <>
+          <dl className="mb-6 grid gap-3 sm:grid-cols-3">
+            <Cifra etiqueta="Firmado" valor={FORMATO_MONTO.format(suma(firmados) / 100)} detalle={`${firmados.length} ${firmados.length === 1 ? 'presupuesto' : 'presupuestos'}`} destacada />
+            <Cifra etiqueta="En curso" valor={FORMATO_MONTO.format(suma(enCurso) / 100)} detalle={`${enCurso.length} esperando respuesta o por enviar`} />
+            <Cifra etiqueta="Cerrados sin firma" valor={String(cerrados.length)} detalle="rechazados o vencidos" />
+          </dl>
+          <BarraDeLista
+            busqueda={busqueda}
+            onBusqueda={setBusqueda}
+            placeholder="Concepto o cliente"
+            etiquetaBusqueda="Buscar un presupuesto"
+            filtro={filtro}
+            onFiltro={setFiltro}
+            etiquetaFiltro="Estado de los presupuestos"
+            opciones={[
+              { valor: 'todos', texto: 'Todos', cantidad: presupuestos.length },
+              { valor: 'encurso', texto: 'En curso', cantidad: enCurso.length },
+              { valor: 'firmados', texto: 'Firmados', cantidad: firmados.length },
+              { valor: 'cerrados', texto: 'Cerrados', cantidad: cerrados.length },
+            ]}
+          />
+        </>
+      )}
+
       {cargando ? (
         <ListSkeleton rows={6} />
       ) : presupuestos.length === 0 ? (
         <EmptyState message='Todavía no hay presupuestos cargados. Usá "Nuevo presupuesto" para agregar el primero.' />
+      ) : visibles.length === 0 ? (
+        <EmptyState message="Ningún presupuesto coincide con la búsqueda." />
       ) : (
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
-        >
-          {presupuestos.map((p, i) => (
+        <div className="flex flex-col gap-2">
+          {visibles.map((p) => (
             <FilaPresupuesto
               key={p.id}
               presupuesto={p}
-              index={i + 1}
               cliente={p.cliente_id ? clientesPorId.get(p.cliente_id) : undefined}
               expedientes={expedientes}
               onCambiado={cargar}
             />
           ))}
-        </motion.div>
+        </div>
       )}
+    </div>
+  );
+}
+
+function Cifra({ etiqueta, valor, detalle, destacada }: { etiqueta: string; valor: string; detalle: string; destacada?: boolean }) {
+  return (
+    <div className="superficie p-5">
+      <dt className="eyebrow">{etiqueta}</dt>
+      <dd className={`mt-2 text-[26px] font-light leading-none tabular-nums ${destacada ? 'text-white' : 'text-silver'}`}>{valor}</dd>
+      <dd className="mt-2 text-xs text-text-gray-light">{detalle}</dd>
     </div>
   );
 }
 
 function FilaPresupuesto({
   presupuesto,
-  index,
   cliente,
   expedientes,
   onCambiado,
 }: {
   presupuesto: Presupuesto;
-  index: number;
   cliente?: Cliente;
   expedientes: Expediente[];
   onCambiado: () => void;
@@ -144,10 +204,22 @@ function FilaPresupuesto({
 
   return (
     <div>
-      <Row
-        index={index}
-        to="/presupuestos"
-        actions={
+      <FilaLista
+        inicio={
+          <BloqueIcono>
+            <FileTextIcon className="h-5 w-5" strokeWidth={1.5} />
+          </BloqueIcono>
+        }
+        lateral={
+          <>
+            <span className="text-[15px] font-bold tabular-nums text-white">{FORMATO_MONTO.format(presupuesto.monto / 100)}</span>
+            <EstadoBadge
+              estado={presupuesto.estado}
+              colorMap={{ borrador: 'neutral', enviado: 'warning', firmado: 'success', rechazado: 'warning', vencido: 'neutral' }}
+            />
+          </>
+        }
+        acciones={
           <>
             {!esFinal && (
               <>
@@ -239,26 +311,15 @@ function FilaPresupuesto({
                 alFallar={setError}
               />
             )}
-            <EstadoBadge
-              estado={presupuesto.estado}
-              colorMap={{
-                borrador: 'neutral',
-                enviado: 'warning',
-                firmado: 'success',
-                rechazado: 'warning',
-                vencido: 'neutral',
-              }}
-            />
           </>
         }
       >
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="font-bold text-white truncate">{presupuesto.concepto}</span>
-          <span className="text-xs text-text-gray-light font-mono truncate">
-            {nombreParte} · {FORMATO_MONTO.format(presupuesto.monto / 100)}
-          </span>
+        <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{presupuesto.concepto}</div>
+        <div className="mt-0.5 truncate text-xs text-text-gray-light">
+          {nombreParte}
+          {presupuesto.fecha_firma ? ` · firmado el ${fechaCorta(presupuesto.fecha_firma)}` : presupuesto.fecha_emision ? ` · emitido el ${fechaCorta(presupuesto.fecha_emision)}` : ''}
         </div>
-      </Row>
+      </FilaLista>
 
       {error && <div className="text-warning text-xs pb-3">{error}</div>}
 
@@ -332,7 +393,7 @@ function FormularioEditarPresupuesto({
   return (
     <form
       onSubmit={enviar}
-      className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
+      className={`superficie p-5 mb-4 grid gap-3 ${
         necesitaContacto ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
       }`}
     >
@@ -419,7 +480,7 @@ function FormularioFirma({
   return (
     <form
       onSubmit={enviar}
-      className={`border border-line rounded-sharp p-4 mb-4 bg-graphite grid gap-3 ${
+      className={`superficie p-5 mb-4 grid gap-3 ${
         necesitaCliente ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'
       }`}
     >
@@ -525,7 +586,7 @@ function FormularioNuevoPresupuesto({
   return (
     <form
       onSubmit={enviar}
-      className="border border-line rounded-sharp p-5 mb-6 bg-graphite grid grid-cols-1 sm:grid-cols-2 gap-3"
+      className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
       <div className="sm:col-span-2 flex gap-4 text-sm text-white">
         <label htmlFor="nuevo-presupuesto-cliente-existente" className="flex items-center gap-1.5 cursor-pointer">

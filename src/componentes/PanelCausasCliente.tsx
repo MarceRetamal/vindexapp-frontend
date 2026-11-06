@@ -135,7 +135,7 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
       </section>
 
       {!cargando && conExistente.length > 0 && (
-        <section className="border border-line rounded-sharp bg-graphite p-4">
+        <section className="superficie p-5">
           <h2 className={tituloClases}>Causas en el portal de expedientes que ya cargaste</h2>
           <p className="text-xs text-text-gray-light mb-3">
             Tienen el mismo número que un expediente de este cliente. Vinculalas para que sus novedades lleguen a la ficha.
@@ -168,7 +168,7 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
       )}
 
       {!cargando && paraCrear.length > 0 && (
-        <section className="border border-line rounded-sharp bg-graphite p-4">
+        <section className="superficie p-5">
           <h2 className={tituloClases}>Causas en el portal que pueden ser de este cliente</h2>
           <p className="text-xs text-text-gray-light mb-3">
             Encontradas por el apellido y el nombre en la carátula. Marcá las que correspondan: por cada una se crea el

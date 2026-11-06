@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { MailIcon, MessageCircleIcon, PhoneIcon } from 'lucide-react';
 import { api, type Cliente } from '../api/cliente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelCausasCliente } from '../componentes/PanelCausasCliente';
+import { SituacionCliente } from '../componentes/SituacionCliente';
+import { enlaceWhatsApp } from '../lib/telefono';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
+
+const accionContacto = 'inline-flex h-9 items-center gap-2 rounded-full border border-line px-3.5 text-[13px] text-silver transition-colors hover:border-silver-deep hover:text-white';
 
 export function ClienteDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -65,14 +70,32 @@ export function ClienteDetalle() {
     <div>
       <VolverAClientes />
 
-      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-4 mb-8">
+      <header className="mb-8 mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white break-words">
+          <p className="eyebrow">Cliente</p>
+          <h1 className="mt-2 break-words text-2xl font-black leading-tight text-white sm:text-[30px]">
             {cliente.apellido}, {cliente.nombre}
           </h1>
-          <p className="text-sm text-text-gray-light mt-1">
-            {cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado'}
+          <p className="mt-2 text-sm text-silver">
+            {[cliente.dni ? `DNI ${cliente.dni}` : 'Sin DNI cargado', cliente.localidad].filter(Boolean).join(' · ')}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {enlaceWhatsApp(cliente.whatsapp) && (
+              <a href={enlaceWhatsApp(cliente.whatsapp) ?? undefined} target="_blank" rel="noopener noreferrer" className={accionContacto}>
+                <MessageCircleIcon className="h-4 w-4" strokeWidth={1.6} /> WhatsApp
+              </a>
+            )}
+            {(cliente.telefono_fijo || cliente.whatsapp) && (
+              <a href={`tel:${(cliente.whatsapp ?? cliente.telefono_fijo ?? '').replace(/[^\d+]/g, '')}`} className={accionContacto}>
+                <PhoneIcon className="h-4 w-4" strokeWidth={1.6} /> Llamar
+              </a>
+            )}
+            {cliente.email && (
+              <a href={`mailto:${cliente.email}`} className={accionContacto}>
+                <MailIcon className="h-4 w-4" strokeWidth={1.6} /> Mail
+              </a>
+            )}
+          </div>
         </div>
         <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <EstadoBadge
@@ -93,10 +116,12 @@ export function ClienteDetalle() {
 
       {errorEliminar && <ErrorBanner message={errorEliminar} />}
 
+      <SituacionCliente clienteId={id!} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <section className="border border-line rounded-sharp bg-graphite p-4">
-            <h2 className="text-xs font-bold text-silver mb-3 uppercase tracking-[0.2em]">Datos de contacto</h2>
+          <section className="superficie p-5">
+            <h2 className="eyebrow mb-3 text-silver">Datos de contacto</h2>
             {sinDatos ? (
               <EmptyState message="Todavía no se cargaron datos de contacto para este cliente." />
             ) : (
