@@ -7,6 +7,7 @@ import { api as apiTareas, type Tarea } from '../api/tareas';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelPortal } from '../componentes/PanelPortal';
+import { EnlaceCliente, SituacionExpediente } from '../componentes/SituacionExpediente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -145,14 +146,15 @@ export function ExpedienteDetalle() {
     <div>
       <VolverAExpedientes />
 
-      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-4 mb-8">
+      <header className="mb-8 mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-[0.08em] sm:tracking-[0.1em] text-white break-words">
-            {expediente.caratula}
-          </h1>
-          <p className="text-sm text-text-gray-light mt-1">
-            {expediente.cliente_apellido}, {expediente.cliente_nombre}
+          <p className="eyebrow">{expediente.fuero ?? 'Expediente'}</p>
+          <h1 className="mt-2 break-words text-2xl font-black leading-tight text-white sm:text-[30px]">{expediente.caratula}</h1>
+          <p className="mt-3 text-sm text-silver">
+            <EnlaceCliente clienteId={expediente.cliente_id} nombre={`${expediente.cliente_apellido}, ${expediente.cliente_nombre}`} />
+            {expediente.rol_procesal ? ` · ${expediente.rol_procesal}` : ''}
           </p>
+          <p className="mt-1 text-xs text-text-gray-light">{[expediente.numero, expediente.juzgado, expediente.departamento && !expediente.juzgado?.toLowerCase().includes(expediente.departamento.toLowerCase()) ? expediente.departamento : null].filter(Boolean).join(' · ')}</p>
         </div>
         <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <EstadoBadge
@@ -173,10 +175,12 @@ export function ExpedienteDetalle() {
 
       {errorEliminar && <ErrorBanner message={errorEliminar} />}
 
+      <SituacionExpediente expedienteId={id!} actuaciones={actuaciones} tareas={tareas} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Actuaciones</h2>
+            <h2 className="eyebrow text-silver">Actuaciones</h2>
             <Button
               onClick={() => setMostrarFormulario(true)}
               className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
@@ -212,7 +216,7 @@ export function ExpedienteDetalle() {
           )}
 
           <div className="flex items-center justify-between mb-3 mt-8">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Tareas</h2>
+            <h2 className="eyebrow text-silver">Tareas</h2>
             <Button
               onClick={() => setMostrarFormularioTarea(true)}
               className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver"
@@ -242,8 +246,8 @@ export function ExpedienteDetalle() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <section className="border border-line rounded-sharp bg-graphite p-4">
-            <h2 className="text-xs font-bold text-silver mb-3 uppercase tracking-[0.2em]">Datos</h2>
+          <section className="superficie p-5">
+            <h2 className="eyebrow mb-3 text-silver">Datos</h2>
             <div className="flex flex-col gap-3">
               <Dato etiqueta="Número" valor={expediente.numero} />
               <Dato etiqueta="Fuero" valor={expediente.fuero} />

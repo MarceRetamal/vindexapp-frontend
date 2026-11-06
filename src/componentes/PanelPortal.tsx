@@ -3,6 +3,8 @@ import { Link } from 'react-router';
 import { api as portalApi, type CausaPortal, type CausaVinculada } from '../api/portal';
 import { api as novedadesApi, avisarCambioNovedades, type Novedad } from '../api/novedades';
 import { EmptyState } from './EmptyState';
+import { PropuestaPlazo } from './PropuestaPlazo';
+import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { EnlacePlazo } from './EnlacePlazo';
 import { ErrorBanner } from './ErrorBanner';
 import { EstadoBadge } from './EstadoBadge';
@@ -41,6 +43,7 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
   const [aviso, setAviso] = useState<string | null>(null);
   const [vinculando, setVinculando] = useState(false);
   const [sugeridas, setSugeridas] = useState<(CausaVinculada & { certeza: 'alta' | 'posible'; motivo: string })[]>([]);
+  const sugerencias = usePlazosSugeridos(novedades.filter((n) => n.revisada_en === null));
 
   function cargar() {
     setCargando(true);
@@ -102,7 +105,7 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3 mt-8">
-        <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-silver">Portal de Notificaciones</h2>
+        <h2 id="portal" className="eyebrow scroll-mt-6 text-silver">Portal de Notificaciones</h2>
         <Button variant="ghost" size="sm" onClick={() => setVinculando((v) => !v)} className={botonClases}>
           {vinculando ? 'Cerrar' : '+ Vincular causa del portal'}
         </Button>
@@ -180,7 +183,8 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
               {novedades.map((n) => {
                 const revisada = n.revisada_en !== null;
                 return (
-                  <article key={n.id} className="py-3 border-b border-line flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+                  <article key={n.id} className="py-3 border-b border-line">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                     <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-white break-words">{n.tipo ?? 'Notificación del portal'}</span>
@@ -211,6 +215,8 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
                       )}
                       <EnlacePlazo novedad={n} />
                     </div>
+                    </div>
+                    {!revisada && sugerencias[n.id]?.propuesta && <PropuestaPlazo novedad={n} propuesta={sugerencias[n.id]!.propuesta!} />}
                   </article>
                 );
               })}

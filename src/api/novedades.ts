@@ -94,3 +94,32 @@ export const api = {
 
   obtenerResumen: () => pedido<ResumenNovedades>('/novedades/resumen'),
 };
+
+/** Plazo que el sistema propone para una novedad. Es una propuesta: el abogado la confirma. */
+export interface PropuestaPlazo {
+  regimen: 'cpcc' | 'cpp';
+  dias: number;
+  vista: boolean;
+  /** 'proveido': los días los dice el texto. 'supletorio': corresponde el plazo del código y hay que verificarlo. */
+  origen: 'proveido' | 'supletorio';
+  cita: string | null;
+  fundamento: string;
+  fecha_notificacion: string;
+  vencimiento: string;
+  plazo_de_gracia: string | null;
+  localidad: string | null;
+  normas: string[];
+  supuestos: string[];
+  advertencias: string[];
+}
+
+export interface SugerenciaPlazo {
+  propuesta: PropuestaPlazo | null;
+  motivo: string | null;
+}
+
+export const apiPlazos = {
+  /** Propuestas de plazo para hasta 50 novedades a la vez. */
+  plazosSugeridos: (ids: string[]) =>
+    pedido<{ sugerencias: Record<string, SugerenciaPlazo> }>(`/novedades/plazos-sugeridos?ids=${ids.map(encodeURIComponent).join(',')}`),
+};

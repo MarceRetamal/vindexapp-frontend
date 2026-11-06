@@ -7,10 +7,13 @@ import {
   type Novedad,
   type NovedadDetalle,
 } from '../api/novedades';
+import type { SugerenciaPlazo } from '../api/novedades';
 import { api as apiAlertas, mensajeDeError, type EstadoWhatsApp } from '../api/alertas';
 import { api as apiPortal, type EstadoPortal } from '../api/portal';
 import { EmptyState } from '../componentes/EmptyState';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
+import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
+import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -62,6 +65,7 @@ export function Novedades() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [marcandoTodas, setMarcandoTodas] = useState(false);
   const pedidoActual = useRef(0);
+  const sugerencias = usePlazosSugeridos(lista.filter((n) => n.revisada_en === null));
 
   // La búsqueda espera un instante después de tipear para no pedir en cada letra.
   useEffect(() => {
@@ -215,7 +219,7 @@ export function Novedades() {
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.03 } } }}
           >
             {lista.map((n) => (
-              <FilaNovedad key={n.id} novedad={n} onRevision={alCambiarRevision} onError={setError} />
+              <FilaNovedad key={n.id} novedad={n} sugerencia={sugerencias[n.id]} onRevision={alCambiarRevision} onError={setError} />
             ))}
           </motion.div>
           {lista.length < total && (
@@ -233,10 +237,12 @@ export function Novedades() {
 
 function FilaNovedad({
   novedad,
+  sugerencia,
   onRevision,
   onError,
 }: {
   novedad: Novedad;
+  sugerencia?: SugerenciaPlazo;
   onRevision: (id: string, revisadaEn: number | null) => void;
   onError: (mensaje: string | null) => void;
 }) {
@@ -279,7 +285,7 @@ function FilaNovedad({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="py-4 border-b border-line"
+      className={`superficie mb-3 p-4 sm:p-5 ${revisada ? 'opacity-70' : ''}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
         <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -292,7 +298,7 @@ function FilaNovedad({
               colorMap={{ Revisada: 'success', Pendiente: 'warning' }}
             />
           </div>
-          <div className="font-medium text-white">{novedad.tipo ?? 'Notificación sin trámite informado'}</div>
+          <div className="text-[15px] font-bold text-white">{novedad.tipo ?? 'Notificación sin trámite informado'}</div>
           {novedad.caratula && <div className="text-xs text-text-gray-light">{novedad.caratula}</div>}
           {novedad.organismo && <div className="text-xs text-text-gray-light">{novedad.organismo}</div>}
           <div className="text-xs font-mono text-text-gray-light">
@@ -327,6 +333,11 @@ function FilaNovedad({
           <EnlacePlazo novedad={novedad} />
         </div>
       </div>
+
+      {!revisada && sugerencia?.propuesta && <PropuestaPlazo novedad={novedad} propuesta={sugerencia.propuesta} />}
+      {!revisada && sugerencia && !sugerencia.propuesta && sugerencia.motivo && (
+        <p className="mt-3 text-xs text-text-gray-light">Sin plazo propuesto: {sugerencia.motivo}</p>
+      )}
 
       {abierta && (
         <div className="mt-3 border border-line rounded-sharp bg-graphite p-4">
