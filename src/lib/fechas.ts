@@ -71,3 +71,26 @@ export function resumenDelDia(datos: { vencidas: number; plazosHoy: number; audi
   const ultimo = partes.pop() as string;
   return `Tenés ${partes.length > 0 ? `${partes.join(', ')} y ` : ''}${ultimo}.`;
 }
+
+/** Fecha de hoy en Argentina (AAAA-MM-DD). */
+export function hoyEnArgentina(ahora: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA }).format(ahora);
+}
+
+/** Días entre dos fechas AAAA-MM-DD (b - a): negativo si b es anterior. */
+export function diasEntre(a: string, b: string): number {
+  return Math.round((new Date(`${b}T12:00:00Z`).getTime() - new Date(`${a}T12:00:00Z`).getTime()) / 86_400_000);
+}
+
+/** "jueves 12/11/2026" */
+export function fechaConDia(iso: string): string {
+  const dia = new Intl.DateTimeFormat('es-AR', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`));
+  const [a, m, d] = iso.split('-');
+  return `${dia} ${d}/${m}/${a}`;
+}
+
+/** "12/11/2026" */
+export function fechaCorta(iso: string): string {
+  const [a, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${a}`;
+}

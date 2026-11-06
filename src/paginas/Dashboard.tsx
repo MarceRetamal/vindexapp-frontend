@@ -3,10 +3,13 @@ import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, CalendarDaysIcon, CheckIcon, HourglassIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react';
 import { apiAgenda, type AgendaDia, type ClaseItemDia, type ItemDia } from '../api/dashboard';
-import { api as novedadesApi, type Novedad } from '../api/novedades';
+import { api as novedadesApi, type Novedad, type PropuestaPlazo } from '../api/novedades';
+import { enlaceDeRevision } from '../componentes/PropuestaPlazo';
 import { api as portalApi, type EstadoPortal } from '../api/portal';
 import { sesionActual } from '../api/whoami';
-import { diaYMes, etiquetaDias, fechaLarga, haceCuanto, horaEnArgentina, resumenDelDia, saludoDe } from '../lib/fechas';
+import { diasEntre, etiquetaDias, fechaLarga, fechaConDia, haceCuanto, hoyEnArgentina, horaEnArgentina, resumenDelDia, saludoDe } from '../lib/fechas';
+import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
+import { BloqueFecha } from '../componentes/BloqueFecha';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -175,25 +178,6 @@ function ListaAgenda({ items }: { items: ItemDia[] }) {
   );
 }
 
-function BloqueFecha({ item }: { item: ItemDia }) {
-  const { dia, mes } = diaYMes(item.fecha);
-  const clases =
-    item.dias < 0
-      ? 'border-warning/60 bg-warning/10 text-warning'
-      : item.dias === 0
-        ? 'border-transparent bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black'
-        : item.dias <= 2
-          ? 'border-silver/50 text-white'
-          : 'border-line text-silver-deep';
-  return (
-    <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-md border leading-none ${clases}`} aria-hidden="true">
-      <span className="text-[10px] font-bold tracking-[0.14em]">{item.dias === 0 ? 'HOY' : mes}</span>
-      {/* Una audiencia de hoy muestra su hora: es lo que hay que saber de un vistazo. */}
-      <span className={`mt-1 font-bold tabular-nums ${item.dias === 0 && item.hora ? 'text-[17px]' : 'text-[22px]'}`}>{item.dias === 0 && item.hora ? item.hora : dia}</span>
-    </div>
-  );
-}
-
 function FilaAgenda({ item, demora }: { item: ItemDia; demora: number }) {
   const { icono: Icono, etiqueta } = ICONO_CLASE[item.clase];
   const destino = item.expediente_id ? `/expedientes/${item.expediente_id}` : '/tareas';
@@ -205,7 +189,7 @@ function FilaAgenda({ item, demora }: { item: ItemDia; demora: number }) {
         to={destino}
         className="superficie group flex items-center gap-4 p-3.5 transition-colors hover:border-silver-deep hover:bg-graphite-raised focus-visible:border-silver"
       >
-        <BloqueFecha item={item} />
+        <BloqueFecha fecha={item.fecha} dias={item.dias} hora={item.hora} />
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{item.titulo}</div>
           {contexto && <div className="mt-0.5 truncate text-xs text-text-gray-light">{contexto}</div>}
@@ -257,6 +241,7 @@ function PulsoPortal({ estado }: { estado: EstadoPortal | null }) {
 }
 
 function TarjetaNovedades({ datos }: { datos: { lista: Novedad[]; total: number } | null }) {
+  const sugerencias = usePlazosSugeridos(datos?.lista ?? []);
   if (!datos) return null;
   return (
     <section className="superficie p-5" aria-label="Novedades del portal">
@@ -283,6 +268,7 @@ function TarjetaNovedades({ datos }: { datos: { lista: Novedad[]; total: number 
                 {n.numero_causa}
                 {n.caratula ? ` · ${n.caratula}` : ''}
               </div>
+              {sugerencias[n.id]?.propuesta && <LineaPlazo propuesta={sugerencias[n.id]!.propuesta!} novedad={n} />}
               <div className="mt-1.5 flex items-center justify-between gap-3">
                 <span className="text-xs text-silver-deep">{n.fecha_notificacion ? `Notificada el ${n.fecha_notificacion.split('-').reverse().join('/')}` : 'Sin fecha de notificación'}</span>
                 <EnlacePlazo novedad={n} />
@@ -296,5 +282,19 @@ function TarjetaNovedades({ datos }: { datos: { lista: Novedad[]; total: number 
         {datos.total > datos.lista.length ? `Ver las ${datos.total} novedades` : 'Abrir la bandeja'} <ArrowRightIcon className="h-3.5 w-3.5" strokeWidth={1.6} />
       </Link>
     </section>
+  );
+}
+
+/** Una línea con el plazo propuesto de una novedad; al tocarla se revisa en la calculadora. */
+function LineaPlazo({ propuesta, novedad }: { propuesta: PropuestaPlazo; novedad: Novedad }) {
+  const dias = diasEntre(hoyEnArgentina(), propuesta.vencimiento);
+  return (
+    <Link
+      to={enlaceDeRevision(propuesta, novedad)}
+      className={`mt-2 flex items-center justify-between gap-3 rounded-sm border px-2.5 py-1.5 text-xs transition-colors hover:border-silver ${dias <= 0 ? 'border-warning/50 text-warning' : 'border-line text-silver'}`}
+    >
+      <span className="min-w-0 truncate">Vence {fechaConDia(propuesta.vencimiento).replace(/\/\d{4}$/, '')}{propuesta.origen === 'supletorio' ? ' · a verificar' : ''}</span>
+      <span className="shrink-0 font-bold">{etiquetaDias(dias)}</span>
+    </Link>
   );
 }

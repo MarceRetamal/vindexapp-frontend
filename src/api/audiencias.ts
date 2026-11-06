@@ -18,6 +18,8 @@ export interface Audiencia {
 export const api = {
   listarAudiencias: () => pedido<Audiencia[]>(`/audiencias?estudio_id=${ESTUDIO_ID}`),
 
+  listarDeExpediente: (expedienteId: string) => pedido<Audiencia[]>(`/audiencias?expediente_id=${encodeURIComponent(expedienteId)}`),
+
   crearAudiencia: (datos: {
     expediente_id: string;
     tipo: string;

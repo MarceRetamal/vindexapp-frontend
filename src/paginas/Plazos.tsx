@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { api, type CalendarioJudicial, type Regimen, type ResultadoPlazo, type TipoInhabil, type TipoInicio } from '../api/plazos';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
@@ -56,6 +56,13 @@ export function Plazos() {
         fechaInicial={params.get('fecha') ?? ''}
         expedienteInicial={params.get('expediente_id') ?? ''}
         tituloInicial={params.get('titulo') ?? ''}
+        inicial={{
+          regimen: params.get('regimen') === 'cpp' ? 'cpp' : 'cpcc',
+          dias: params.get('dias'),
+          vista: params.get('vista') === '1',
+          localidad: params.get('localidad'),
+          calcular: params.get('calcular') === '1',
+        }}
       />
       <SeccionCalendario calendario={calendario} onCambio={cargarCalendario} />
     </div>
@@ -67,19 +74,22 @@ function Calculadora({
   fechaInicial,
   expedienteInicial,
   tituloInicial,
+  inicial,
 }: {
   calendario: CalendarioJudicial | null;
   fechaInicial: string;
   expedienteInicial: string;
   tituloInicial: string;
+  /** Datos con que se abre la calculadora desde una propuesta de plazo; con `calcular` calcula sola al cargar el calendario. */
+  inicial: { regimen: Regimen; dias: string | null; vista: boolean; localidad: string | null; calcular: boolean };
 }) {
-  const [regimen, setRegimen] = useState<Regimen>('cpcc');
+  const [regimen, setRegimen] = useState<Regimen>(inicial.regimen);
   const [tipoInicio, setTipoInicio] = useState<TipoInicio>('notificacion');
   const [fecha, setFecha] = useState(fechaInicial);
-  const [dias, setDias] = useState('5');
-  const [localidad, setLocalidad] = useState('LA PLATA');
+  const [dias, setDias] = useState(inicial.dias ?? (inicial.regimen === 'cpp' ? '3' : '5'));
+  const [localidad, setLocalidad] = useState(inicial.localidad ?? 'LA PLATA');
   const [distancia, setDistancia] = useState('');
-  const [vista, setVista] = useState(false);
+  const [vista, setVista] = useState(inicial.vista);
   const [suspende, setSuspende] = useState(false);
   const [flagrancia, setFlagrancia] = useState(false);
   const [recurso, setRecurso] = useState(false);
@@ -104,8 +114,22 @@ function Calculadora({
     }
   }
 
-  async function calcular(e: React.FormEvent) {
+  function calcular(e: React.FormEvent) {
     e.preventDefault();
+    void ejecutar(localidad);
+  }
+
+  // Abierta desde una propuesta de plazo: calcula sola apenas está el calendario, para mostrar el cómputo ya hecho.
+  const calculadaSola = useRef(false);
+  useEffect(() => {
+    if (!inicial.calcular || calculadaSola.current || !calendario || !fecha) return;
+    calculadaSola.current = true;
+    void ejecutar(calendario.localidades.includes(localidad) ? localidad : '');
+    // Solo cuando llega el calendario.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendario]);
+
+  async function ejecutar(localidadEfectiva: string) {
     setCalculando(true);
     setError(null);
     setResultado(null);
@@ -114,7 +138,7 @@ function Calculadora({
         regimen,
         inicio: { tipo: tipoInicio, fecha },
         dias: Number(dias),
-        localidad: localidad || null,
+        localidad: localidadEfectiva || null,
         distancia_km: regimen === 'cpcc' && distancia ? Number(distancia) : undefined,
         vista: regimen === 'cpp' && vista,
         suspende_en_feria: regimen === 'cpp' && suspende,
