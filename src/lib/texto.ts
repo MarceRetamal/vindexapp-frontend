@@ -10,3 +10,17 @@ export function coincide(busqueda: string, texto: string): boolean {
   const base = normalizar(texto);
   return palabras.every((p) => base.includes(p));
 }
+
+/**
+ * PARCHE DE SEGURIDAD: un enlace que viene de afuera (el portal, la extensión) solo se usa si es http o https.
+ * Un enlace "javascript:" ejecutaría código en el panel al hacer clic.
+ */
+export function enlaceSeguro(enlace: string | null | undefined): string | null {
+  if (!enlace) return null;
+  try {
+    const url = new URL(enlace);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}

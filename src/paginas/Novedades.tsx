@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import {
   api,
@@ -15,6 +16,7 @@ import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
 import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { ErrorBanner } from '../componentes/ErrorBanner';
+import { enlaceSeguro } from '../lib/texto';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { Button } from '@/componentes/ui/button';
@@ -320,9 +322,9 @@ function FilaNovedad({
               {abierta ? 'Ocultar texto' : 'Ver texto'}
             </Button>
           )}
-          {novedad.enlace && (
+          {enlaceSeguro(novedad.enlace) && (
             <a
-              href={novedad.enlace}
+              href={enlaceSeguro(novedad.enlace) ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-text-gray-light hover:text-white underline-offset-4 hover:underline"
@@ -423,10 +425,8 @@ function LecturaPortal({
     : estado === null
       ? 'Consultando la lectura automática del portal…'
       : !estado.configurado
-        ? `Lectura automática del portal sin configurar. Falta: ${estado.faltan.join(', ')}.`
-        : !estado.estudio_correcto
-          ? 'La lectura automática del portal no está habilitada para este estudio.'
-          : estado.pausada
+        ? 'Todavía no conectaste el portal de la SCBA: sin eso no llegan las novedades solas.'
+        : estado.pausada
             ? 'Lectura automática del portal PAUSADA: el portal rechazó la contraseña guardada. Actualizala y tocá "Leer el portal ahora".'
             : estado.errores_consecutivos > 0
               ? `Lectura automática del portal con problemas (${estado.errores_consecutivos} intentos fallidos)${estado.ultimo_error ? `: ${estado.ultimo_error}` : ''}${estado.ultimo_ok ? ` Última lectura buena ${hace(estado.ultimo_ok)}.` : ''}`
@@ -439,6 +439,12 @@ function LecturaPortal({
   return (
     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
       <span>{texto}</span>
+      {estado !== null && !estado.configurado && (
+        <Link to="/configuracion" className="text-silver transition-colors hover:text-white">Conectarlo en Configuración</Link>
+      )}
+      {estado?.pausada && (
+        <Link to="/configuracion" className="text-silver transition-colors hover:text-white">Actualizar la contraseña</Link>
+      )}
       {listo && (
         <Button variant="ghost" size="sm" onClick={leerAhora} disabled={leyendo} className={botonClases}>
           {leyendo ? 'Leyendo el portal…' : 'Leer el portal ahora'}
@@ -489,12 +495,15 @@ function AvisosWhatsApp({
       : listo
         ? 'Avisos por WhatsApp activos: te avisamos cuando llegan novedades nuevas, de 8 a 22 hs.'
         : estado.configurado
-          ? 'Los avisos por WhatsApp no están habilitados para este estudio.'
+          ? 'Todavía no cargaste tu número de WhatsApp: sin eso no te avisamos las novedades.'
           : `Avisos por WhatsApp sin configurar. Falta: ${estado.faltan.join(', ')}.`;
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
       <span>{texto}</span>
+      {estado !== null && !listo && (
+        <Link to="/configuracion" className="text-silver transition-colors hover:text-white">Cargar mi número</Link>
+      )}
       {listo && (
         <Button variant="ghost" size="sm" onClick={probar} disabled={enviando} className={botonClases}>
           {enviando ? 'Enviando…' : 'Enviar aviso de prueba'}

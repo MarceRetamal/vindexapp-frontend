@@ -7,6 +7,7 @@ import {
   FolderOpenIcon,
   HourglassIcon,
   LayoutDashboardIcon,
+  SettingsIcon,
   SquareCheckBigIcon,
   UsersIcon,
   type LucideIcon,
@@ -31,6 +32,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/presupuestos', etiqueta: 'Presupuestos', icono: FileTextIcon, grupo: 'Estudio' },
   { ruta: '/liquidaciones', etiqueta: 'Liquidaciones', icono: CalculatorIcon, grupo: 'Estudio' },
   { ruta: '/reportes', etiqueta: 'Reportes', icono: ChartColumnIcon, grupo: 'Estudio' },
+  { ruta: '/configuracion', etiqueta: 'Configuración', icono: SettingsIcon, grupo: 'Estudio' },
 ];
 
 export const GRUPOS: Seccion['grupo'][] = ['Hoy', 'Causas', 'Estudio'];

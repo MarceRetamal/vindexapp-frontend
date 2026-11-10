@@ -1,0 +1,13 @@
+# Cabeceras de seguridad del panel (Cloudflare las aplica a los archivos estáticos).
+# PARCHE DE SEGURIDAD: antes el panel no mandaba ninguna.
+#  - Content-Security-Policy: el navegador solo ejecuta scripts del propio panel (frena la inyección de código),
+#    solo se conecta con el panel y con R2 (subida de documentos) y no se deja mostrar dentro de otra página.
+#    'unsafe-inline' vale solo para estilos (las animaciones los ponen en línea), nunca para scripts.
+#  - Si se suma un servicio externo (fuentes, analítica, mapas), hay que agregarlo acá o el navegador lo bloquea.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://panel.vindexlegal.com.ar https://*.r2.cloudflarestorage.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
