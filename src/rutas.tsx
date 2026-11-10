@@ -13,6 +13,7 @@ import { Novedades } from './paginas/Novedades';
 import { Tareas } from './paginas/Tareas';
 import { Plazos } from './paginas/Plazos';
 import { Configuracion } from './paginas/Configuracion';
+import { Jurisprudencia } from './paginas/Jurisprudencia';
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'liquidaciones', element: <Liquidaciones /> },
       { path: 'reportes', element: <Reportes /> },
       { path: 'configuracion', element: <Configuracion /> },
+      { path: 'jurisprudencia', element: <Jurisprudencia /> },
     ],
   },
 ]);
