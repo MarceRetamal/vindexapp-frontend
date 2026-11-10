@@ -16,6 +16,7 @@ import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
 import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { ErrorBanner } from '../componentes/ErrorBanner';
+import { enlaceSeguro } from '../lib/texto';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { Button } from '@/componentes/ui/button';
@@ -321,9 +322,9 @@ function FilaNovedad({
               {abierta ? 'Ocultar texto' : 'Ver texto'}
             </Button>
           )}
-          {novedad.enlace && (
+          {enlaceSeguro(novedad.enlace) && (
             <a
-              href={novedad.enlace}
+              href={enlaceSeguro(novedad.enlace) ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-text-gray-light hover:text-white underline-offset-4 hover:underline"

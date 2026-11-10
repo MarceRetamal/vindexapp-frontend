@@ -9,6 +9,7 @@ import { EnlacePlazo } from './EnlacePlazo';
 import { ErrorBanner } from './ErrorBanner';
 import { EstadoBadge } from './EstadoBadge';
 import { ListSkeleton } from './ListSkeleton';
+import { enlaceSeguro } from '../lib/texto';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -203,9 +204,9 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
                       <Button variant="ghost" size="sm" onClick={() => alternarRevision(n)} className={botonClases}>
                         {revisada ? 'Volver a pendiente' : 'Marcar revisada'}
                       </Button>
-                      {n.enlace && (
+                      {enlaceSeguro(n.enlace) && (
                         <a
-                          href={n.enlace}
+                          href={enlaceSeguro(n.enlace) ?? undefined}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-text-gray-light hover:text-white underline-offset-4 hover:underline"
