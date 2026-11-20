@@ -12,6 +12,7 @@ import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { MarcaPortal } from '../componentes/MarcaPortal';
+import { CausasSinExpediente } from '../componentes/CausasSinExpediente';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -112,6 +113,8 @@ export function Expedientes() {
           ))}
         </div>
       )}
+
+      <CausasSinExpediente clientes={clientes} onCreado={cargar} />
     </div>
   );
 }
