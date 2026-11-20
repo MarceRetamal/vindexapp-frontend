@@ -4,11 +4,7 @@ import { CornerDownLeftIcon, FolderOpenIcon, SearchIcon, UsersIcon, type LucideI
 import { api as clientesApi, type Cliente } from '../api/cliente';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
 import { EVENTO_PALETA, SECCIONES } from '../navegacion';
-
-/** Compara sin tildes ni mayúsculas: "Rodriguez" encuentra "Rodríguez". */
-function normalizar(texto: string): string {
-  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-}
+import { buscar, coincide } from '../lib/texto';
 
 interface Opcion {
   id: string;
@@ -17,11 +13,6 @@ interface Opcion {
   detalle?: string;
   icono: LucideIcon;
   ir: string;
-}
-
-function coincide(tokens: string[], texto: string): boolean {
-  const base = normalizar(texto);
-  return tokens.every((t) => base.includes(t));
 }
 
 /**
@@ -77,17 +68,17 @@ export function PaletaComandos() {
   }, [abierta]);
 
   const opciones = useMemo<Opcion[]>(() => {
-    const tokens = normalizar(consulta).split(/\s+/).filter(Boolean);
-    const pantallas: Opcion[] = SECCIONES.filter((s) => tokens.length === 0 || coincide(tokens, s.etiqueta)).map((s) => ({
+    const pantallas: Opcion[] = SECCIONES.filter((s) => coincide(consulta, s.etiqueta)).map((s) => ({
       id: `pantalla:${s.ruta}`,
       grupo: 'Ir a',
       titulo: s.etiqueta,
       icono: s.icono,
       ir: s.ruta,
     }));
-    if (tokens.length === 0 || !datos) return pantallas;
-    const expedientes: Opcion[] = datos.expedientes
-      .filter((x) => coincide(tokens, `${x.caratula} ${x.numero ?? ''} ${x.juzgado ?? ''}`))
+    if (consulta.trim() === '' || !datos) return pantallas;
+    // Primero se ordena por parecido con la carátula y después se corta: antes se cortaba en el orden de la
+    // lista y la causa buscada podía quedar afuera de las seis que se muestran.
+    const expedientes: Opcion[] = buscar(datos.expedientes, consulta, (x) => ({ titulo: x.caratula, resto: `${x.numero ?? ''} ${x.juzgado ?? ''}` }))
       .slice(0, 6)
       .map((x) => ({
         id: `expediente:${x.id}`,
@@ -97,8 +88,7 @@ export function PaletaComandos() {
         icono: FolderOpenIcon,
         ir: `/expedientes/${x.id}`,
       }));
-    const clientes: Opcion[] = datos.clientes
-      .filter((x) => coincide(tokens, `${x.apellido} ${x.nombre} ${x.dni ?? ''}`))
+    const clientes: Opcion[] = buscar(datos.clientes, consulta, (x) => ({ titulo: `${x.apellido} ${x.nombre}`, resto: x.dni ?? '' }))
       .slice(0, 5)
       .map((x) => ({
         id: `cliente:${x.id}`,

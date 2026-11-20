@@ -6,7 +6,7 @@ import { api as expedientesApi, type Expediente } from '../api/expedientes';
 import { PageHeader } from '../componentes/PageHeader';
 import { BarraDeLista } from '../componentes/BarraDeLista';
 import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
-import { coincide } from '../lib/texto';
+import { buscar } from '../lib/texto';
 import { fechaCorta } from '../lib/fechas';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -62,10 +62,13 @@ export function Presupuestos() {
 
   const visibles = useMemo(
     () =>
-      presupuestos.filter(
-        (p) =>
-          (filtro === 'todos' || (filtro === 'firmados' ? p.estado === 'firmado' : filtro === 'encurso' ? EN_CURSO.includes(p.estado) : p.estado === 'rechazado' || p.estado === 'vencido')) &&
-          coincide(busqueda, `${p.concepto} ${nombreDe(p)}`)
+      buscar(
+        presupuestos.filter(
+          (p) =>
+            filtro === 'todos' || (filtro === 'firmados' ? p.estado === 'firmado' : filtro === 'encurso' ? EN_CURSO.includes(p.estado) : p.estado === 'rechazado' || p.estado === 'vencido')
+        ),
+        busqueda,
+        (p) => ({ titulo: p.concepto, resto: nombreDe(p) })
       ),
     // nombreDe depende de los clientes cargados.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -10,7 +10,8 @@ import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { BloqueFecha } from '../componentes/BloqueFecha';
-import { Chips } from '../componentes/BarraFiltros';
+import { CampoBusqueda, Chips } from '../componentes/BarraFiltros';
+import { buscar } from '../lib/texto';
 import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
 import { diasEntre, hoyEnArgentina } from '../lib/fechas';
 import { Button } from '@/componentes/ui/button';
@@ -35,6 +36,7 @@ export function Tareas() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('pendientes');
   const [filtroOrigen, setFiltroOrigen] = useState<FiltroOrigen>('todas');
+  const [busqueda, setBusqueda] = useState('');
 
   function cargar() {
     setCargando(true);
@@ -53,10 +55,18 @@ export function Tareas() {
   }, []);
 
   const pendientes = tareas.filter((t) => t.estado !== 'Completada');
-  const visibles = tareas.filter(
-    (t) =>
-      (filtroEstado === 'todas' || (filtroEstado === 'completadas') === (t.estado === 'Completada')) &&
-      (filtroOrigen === 'todas' || (filtroOrigen === 'judiciales') === (t.expediente_id !== null))
+  const buscando = busqueda.trim() !== '';
+  const visibles = buscar(
+    tareas.filter(
+      (t) =>
+        (filtroEstado === 'todas' || (filtroEstado === 'completadas') === (t.estado === 'Completada')) &&
+        (filtroOrigen === 'todas' || (filtroOrigen === 'judiciales') === (t.expediente_id !== null))
+    ),
+    busqueda,
+    (t) => ({
+      titulo: t.titulo,
+      resto: `${t.descripcion ?? ''} ${t.tipo ?? ''} ${t.expediente_caratula ?? ''} ${t.cliente_apellido ?? ''} ${t.cliente_nombre ?? ''}`,
+    })
   );
 
   return (
@@ -78,6 +88,12 @@ export function Tareas() {
           }}
           onCancelar={() => setMostrarFormulario(false)}
         />
+      )}
+
+      {tareas.length > 0 && (
+        <div className="mb-3">
+          <CampoBusqueda valor={busqueda} onCambio={setBusqueda} placeholder="Título, carátula, cliente o detalle" etiqueta="Buscar una tarea" />
+        </div>
       )}
 
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -112,11 +128,13 @@ export function Tareas() {
           message={
             tareas.length === 0
               ? 'Todavía no hay tareas. Usá "Nueva tarea" para anotar un llamado, un mail o un acuerdo pendiente.'
-              : 'No hay tareas con estos filtros.'
+              : buscando
+                ? 'Ninguna tarea coincide con la búsqueda.'
+                : 'No hay tareas con estos filtros.'
           }
         />
       ) : (
-        <ListaTareas tareas={visibles} agrupar={filtroEstado === 'pendientes'} clientes={clientes} onCambiado={cargar} onError={setError} />
+        <ListaTareas tareas={visibles} agrupar={filtroEstado === 'pendientes' && !buscando} clientes={clientes} onCambiado={cargar} onError={setError} />
       )}
 
       <div className="mt-12 border-t border-line pt-6">

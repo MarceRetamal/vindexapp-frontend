@@ -11,7 +11,7 @@ import { EstadoBadge } from '../componentes/EstadoBadge';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { Button } from '@/componentes/ui/button';
 import { iniciales } from '../lib/fechas';
-import { coincide } from '../lib/texto';
+import { buscar } from '../lib/texto';
 
 type FiltroEstado = 'todos' | 'Activo' | 'Potencial' | 'Inactivo';
 
@@ -38,10 +38,10 @@ export function Clientes() {
 
   const visibles = useMemo(
     () =>
-      clientes.filter(
-        (c) =>
-          (filtro === 'todos' || c.estado === filtro) &&
-          coincide(busqueda, `${c.apellido} ${c.nombre} ${c.dni ?? ''} ${c.email ?? ''} ${c.whatsapp ?? ''} ${c.localidad ?? ''}`)
+      buscar(
+        clientes.filter((c) => filtro === 'todos' || c.estado === filtro),
+        busqueda,
+        (c) => ({ titulo: `${c.apellido} ${c.nombre}`, resto: `${c.dni ?? ''} ${c.email ?? ''} ${c.whatsapp ?? ''} ${c.localidad ?? ''}` })
       ),
     [clientes, filtro, busqueda]
   );

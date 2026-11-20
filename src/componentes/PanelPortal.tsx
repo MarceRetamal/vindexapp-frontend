@@ -9,7 +9,7 @@ import { EnlacePlazo } from './EnlacePlazo';
 import { ErrorBanner } from './ErrorBanner';
 import { EstadoBadge } from './EstadoBadge';
 import { ListSkeleton } from './ListSkeleton';
-import { enlaceSeguro } from '../lib/texto';
+import { buscar, enlaceSeguro } from '../lib/texto';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -268,11 +268,10 @@ function SelectorCausa({
     }
   }
 
-  const texto = filtro.trim().toUpperCase();
-  const visibles = (causas ?? []).filter(
-    (c) =>
-      c.expediente_id !== expedienteId &&
-      (texto === '' || `${c.numero_causa} ${c.caratula ?? ''} ${c.organismo ?? ''}`.toUpperCase().includes(texto))
+  const visibles = buscar(
+    (causas ?? []).filter((c) => c.expediente_id !== expedienteId),
+    filtro,
+    (c) => ({ titulo: c.caratula ?? '', resto: `${c.numero_causa} ${c.organismo ?? ''}` })
   );
 
   return (
