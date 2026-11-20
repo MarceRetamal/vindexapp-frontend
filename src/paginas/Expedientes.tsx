@@ -6,7 +6,7 @@ import { api as clientesApi, type Cliente } from '../api/cliente';
 import { PageHeader } from '../componentes/PageHeader';
 import { BarraDeLista } from '../componentes/BarraDeLista';
 import { BloqueIcono, FilaLista } from '../componentes/FilaLista';
-import { coincide } from '../lib/texto';
+import { buscar } from '../lib/texto';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -47,10 +47,10 @@ export function Expedientes() {
   const vigentes = expedientes.filter((e) => e.estado !== 'Archivado');
   const visibles = useMemo(
     () =>
-      expedientes.filter(
-        (e) =>
-          (filtro === 'todos' || (filtro === 'archivados') === (e.estado === 'Archivado')) &&
-          coincide(busqueda, `${e.caratula} ${e.numero ?? ''} ${e.juzgado ?? ''} ${e.fuero ?? ''} ${e.cliente_apellido} ${e.cliente_nombre}`)
+      buscar(
+        expedientes.filter((e) => filtro === 'todos' || (filtro === 'archivados') === (e.estado === 'Archivado')),
+        busqueda,
+        (e) => ({ titulo: e.caratula, resto: `${e.numero ?? ''} ${e.juzgado ?? ''} ${e.fuero ?? ''} ${e.cliente_apellido} ${e.cliente_nombre}` })
       ),
     [expedientes, filtro, busqueda]
   );
