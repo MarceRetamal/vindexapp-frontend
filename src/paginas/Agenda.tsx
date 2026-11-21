@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Audiencia } from '../api/audiencias';
 import { api as expedientesApi, type Expediente } from '../api/expedientes';
+import { api as portalApi, type CausaPortal } from '../api/portal';
+import { api as clientesApi, type Cliente } from '../api/cliente';
+import { avisarCambioNovedades } from '../api/novedades';
 import { PageHeader } from '../componentes/PageHeader';
 import { BloqueFecha } from '../componentes/BloqueFecha';
 import { Chips } from '../componentes/BarraFiltros';
@@ -74,6 +77,7 @@ export function Agenda() {
       {mostrarFormulario && (
         <FormularioNuevaAudiencia
           expedientes={expedientes}
+          onExpedienteCreado={cargar}
           onCreado={() => {
             setMostrarFormulario(false);
             cargar();
@@ -205,14 +209,28 @@ function FilaAudiencia({
   );
 }
 
+/**
+ * El selector ofrece los expedientes y, aparte, las causas del portal que todavía no tienen expediente. Un expediente
+ * exige cliente y el portal no lo informa: si se elige una causa, se pide el cliente (uno cargado o uno nuevo, con
+ * nombre y apellido) y al guardar se crea el expediente con los datos del portal, vinculado a la causa, y la audiencia
+ * queda en ese expediente. Es lo mismo que "Crear expediente" desde la ficha del cliente, en un solo paso.
+ */
 function FormularioNuevaAudiencia({
   expedientes,
   onCreado,
+  onExpedienteCreado,
 }: {
   expedientes: Expediente[];
   onCreado: () => void;
+  onExpedienteCreado: () => void;
 }) {
-  const [expedienteId, setExpedienteId] = useState('');
+  // "exp:<id>" o "causa:<id>".
+  const [seleccion, setSeleccion] = useState('');
+  const [causas, setCausas] = useState<CausaPortal[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clienteId, setClienteId] = useState('');
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [apellidoNuevo, setApellidoNuevo] = useState('');
   const [tipo, setTipo] = useState('');
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
@@ -221,12 +239,52 @@ function FormularioNuevaAudiencia({
   const [recordatorio, setRecordatorio] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  function cargarCausasYClientes() {
+    // Si falla, el formulario sigue sirviendo con los expedientes: no se muestra error por esto.
+    portalApi
+      .listarCausas()
+      .then((todas) => setCausas(todas.filter((c) => c.expediente_id === null)))
+      .catch(() => setCausas([]));
+    clientesApi
+      .listarClientes()
+      .then(setClientes)
+      .catch(() => setClientes([]));
+  }
+
+  useEffect(cargarCausasYClientes, []);
+
+  const causaElegida = seleccion.startsWith('causa:') ? causas.find((c) => `causa:${c.id}` === seleccion) ?? null : null;
+  const hayOpciones = expedientes.length > 0 || causas.length > 0;
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setEnviando(true);
     setError(null);
+    setAviso(null);
+    let expedienteId = seleccion.startsWith('exp:') ? seleccion.slice(4) : '';
     try {
+      if (causaElegida) {
+        let cliente = clienteId;
+        if (cliente === 'nuevo') {
+          const creado = await clientesApi.crearCliente({ nombre: nombreNuevo.trim(), apellido: apellidoNuevo.trim() });
+          cliente = creado.id;
+          // Si después falla otro paso, el reintento usa este cliente y no crea otro.
+          setClienteId(creado.id);
+          clientesApi.listarClientes().then(setClientes).catch(() => {});
+        }
+        const r = await clientesApi.crearExpedientesDesdeCausas(cliente, [causaElegida.id]);
+        const nuevo = r.expedientes[0];
+        if (!nuevo) throw new Error('La API no devolvió el expediente creado.');
+        expedienteId = nuevo.id;
+        // Desde acá la audiencia va a ese expediente, también si hay que reintentar.
+        setSeleccion(`exp:${nuevo.id}`);
+        setAviso(`Se creó el expediente "${nuevo.caratula}" y quedó vinculado a la causa del portal.`);
+        avisarCambioNovedades();
+        cargarCausasYClientes();
+        onExpedienteCreado();
+      }
       await api.crearAudiencia({
         expediente_id: expedienteId,
         tipo,
@@ -249,29 +307,85 @@ function FormularioNuevaAudiencia({
       onSubmit={enviar}
       className="superficie p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
-      {expedientes.length === 0 && (
+      {!hayOpciones && (
         <div className="sm:col-span-2">
-          <ErrorBanner message="Todavía no hay expedientes cargados. Creá uno primero en la sección Expedientes." />
+          <ErrorBanner message="Todavía no hay expedientes ni causas del portal. Creá un expediente primero en la sección Expedientes." />
         </div>
       )}
 
       <div className="flex flex-col gap-1 sm:col-span-2">
-        <label htmlFor="nueva-audiencia-expediente" className={etiquetaClases}>Expediente</label>
+        <label htmlFor="nueva-audiencia-expediente" className={etiquetaClases}>Expediente o causa del portal</label>
         <select
           id="nueva-audiencia-expediente"
-          value={expedienteId}
-          onChange={(e) => setExpedienteId(e.target.value)}
+          value={seleccion}
+          onChange={(e) => {
+            setSeleccion(e.target.value);
+            setAviso(null);
+          }}
           required
           className={`${campoClases} block w-full h-8 px-2.5 text-sm text-white outline-none border`}
         >
-          <option value="" disabled>Elegí un expediente</option>
-          {expedientes.map((e) => (
-            <option key={e.id} value={e.id} className="bg-graphite text-white">
-              {e.caratula}
-            </option>
-          ))}
+          <option value="" disabled>Elegí un expediente o una causa</option>
+          {expedientes.length > 0 && (
+            <optgroup label="Expedientes" className="bg-graphite text-silver">
+              {expedientes.map((e) => (
+                <option key={e.id} value={`exp:${e.id}`} className="bg-graphite text-white">
+                  {e.caratula}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {causas.length > 0 && (
+            <optgroup label="Causas del portal sin expediente" className="bg-graphite text-silver">
+              {causas.map((c) => (
+                <option key={c.id} value={`causa:${c.id}`} className="bg-graphite text-white">
+                  {c.caratula ?? 'Sin carátula'} ({c.numero_causa})
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </div>
+
+      {causaElegida && (
+        <div className="sm:col-span-2 flex flex-col gap-2 border-l-2 border-line pl-3">
+          <p className="text-xs text-text-gray-light">
+            Esta causa todavía no tiene expediente. Elegí de qué cliente es: al guardar se crea el expediente con los
+            datos del portal ({causaElegida.numero_causa}
+            {causaElegida.organismo ? `, ${causaElegida.organismo}` : ''}), queda vinculado a la causa y la audiencia
+            se carga ahí.
+          </p>
+          <label htmlFor="nueva-audiencia-cliente" className={etiquetaClases}>Cliente</label>
+          <select
+            id="nueva-audiencia-cliente"
+            value={clienteId}
+            onChange={(e) => setClienteId(e.target.value)}
+            required
+            className={`${campoClases} block w-full h-8 px-2.5 text-sm text-white outline-none border`}
+          >
+            <option value="" disabled>Elegí el cliente</option>
+            <option value="nuevo" className="bg-graphite text-white">+ Cliente nuevo</option>
+            {clientes.map((cl) => (
+              <option key={cl.id} value={cl.id} className="bg-graphite text-white">
+                {cl.apellido}, {cl.nombre}
+              </option>
+            ))}
+          </select>
+          {clienteId === 'nuevo' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="nueva-audiencia-cliente-apellido" className={etiquetaClases}>Apellido</label>
+                <Input id="nueva-audiencia-cliente-apellido" className={campoClases} value={apellidoNuevo} onChange={(e) => setApellidoNuevo(e.target.value)} required />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="nueva-audiencia-cliente-nombre" className={etiquetaClases}>Nombre</label>
+                <Input id="nueva-audiencia-cliente-nombre" className={campoClases} value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} required />
+              </div>
+              <span className="sm:col-span-2 text-xs text-text-gray-light">El resto de los datos se completa después en la ficha del cliente.</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="nueva-audiencia-tipo" className={etiquetaClases}>Tipo</label>
@@ -327,12 +441,17 @@ function FormularioNuevaAudiencia({
         )}
       </div>
 
-      {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}
+      {aviso && <div className="sm:col-span-2 text-success text-sm">{aviso}</div>}
+      {error && (
+        <div className="sm:col-span-2 text-warning text-sm">
+          {aviso ? `El expediente quedó creado, pero la audiencia no se guardó: ${error} Corregí y volvé a guardar.` : error}
+        </div>
+      )}
 
       <div className="sm:col-span-2">
         <Button
           type="submit"
-          disabled={enviando || expedientes.length === 0}
+          disabled={enviando || !hayOpciones}
           className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110 focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-60"
         >
           {enviando ? 'Guardando…' : 'Guardar audiencia'}
