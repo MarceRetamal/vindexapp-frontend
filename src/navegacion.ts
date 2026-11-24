@@ -7,6 +7,7 @@ import {
   FolderOpenIcon,
   HourglassIcon,
   LayoutDashboardIcon,
+  MessageCircleIcon,
   ScaleIcon,
   SettingsIcon,
   SquareCheckBigIcon,
@@ -25,6 +26,7 @@ export interface Seccion {
 export const SECCIONES: Seccion[] = [
   { ruta: '/', etiqueta: 'Mi día', icono: LayoutDashboardIcon, grupo: 'Hoy' },
   { ruta: '/novedades', etiqueta: 'Novedades', icono: BellIcon, grupo: 'Hoy' },
+  { ruta: '/whatsapp', etiqueta: 'WhatsApp', icono: MessageCircleIcon, grupo: 'Hoy' },
   { ruta: '/tareas', etiqueta: 'Tareas', icono: SquareCheckBigIcon, grupo: 'Hoy' },
   { ruta: '/agenda', etiqueta: 'Agenda', icono: CalendarDaysIcon, grupo: 'Hoy' },
   { ruta: '/expedientes', etiqueta: 'Expedientes', icono: FolderOpenIcon, grupo: 'Causas' },
