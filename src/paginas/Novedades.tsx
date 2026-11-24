@@ -10,7 +10,7 @@ import {
 } from '../api/novedades';
 import type { SugerenciaPlazo } from '../api/novedades';
 import { api as apiAlertas, mensajeDeError, type EstadoWhatsApp } from '../api/alertas';
-import { api as apiPortal, type EstadoPortal } from '../api/portal';
+import { api as apiPortal, type DetalleLectura, type EstadoPortal } from '../api/portal';
 import { EmptyState } from '../componentes/EmptyState';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
@@ -361,6 +361,18 @@ function FilaNovedad({
   );
 }
 
+/** "24/11 12:29" a partir de AAAA-MM-DDTHH:MM:SS. */
+function fechaYHora(iso: string): string {
+  const [fecha, hora] = iso.split('T');
+  const [, mes, dia] = (fecha ?? '').split('-');
+  return `${dia}/${mes}${hora ? ` ${hora.slice(0, 5)}` : ''}`;
+}
+
+/** Qué filtro "Procesada" usó el sistema en el portal, para poder compararlo con lo que ve la persona. */
+function filtroUsado(d: DetalleLectura): string {
+  return d.filtro_procesada ? ` Filtro del portal: "${d.filtro_procesada}".` : '';
+}
+
 function hace(ms: number): string {
   const minutos = Math.max(0, Math.round((Date.now() - ms) / 60_000));
   if (minutos < 1) return 'hace instantes';
@@ -401,14 +413,12 @@ function LecturaPortal({
     onAviso(null);
     try {
       const r = await apiPortal.sincronizar();
-      const propias = r.leidas - r.descartadas;
-      const yaGuardadas = Math.max(0, propias - r.nuevas);
+      const yaGuardadas = Math.max(0, r.leidas - r.nuevas);
+      const reciente = r.detalle.alta_mas_reciente ? ` La más reciente es del ${fechaYHora(r.detalle.alta_mas_reciente)}.` : '';
       onAviso(
         r.leidas === 0
-          ? 'Se leyó el portal, pero no devolvió ninguna notificación en los últimos 30 días. Si esperabas ver alguna, avisame.'
-          : propias === 0
-            ? `El portal devolvió ${r.leidas} notificaciones, pero ninguna es de tus causas importadas. Revisá la importación de causas con la extensión.`
-            : `Se leyó el portal: ${r.leidas} notificaciones, ${propias} de tus causas (${r.nuevas} nuevas, ${yaGuardadas} que ya estaban guardadas) y ${r.descartadas} de otras causas.${r.primera ? ' Es la primera lectura: lo nuevo queda en la bandeja sin aviso por WhatsApp.' : ''}`,
+          ? `Se leyó el portal, pero no devolvió ninguna notificación en los últimos 30 días${filtroUsado(r.detalle)}. Si esperabas ver alguna, avisame.`
+          : `Se leyó el portal: ${r.leidas} notificaciones (${r.nuevas} nuevas, ${yaGuardadas} que ya estaban guardadas).${reciente}${filtroUsado(r.detalle)}${r.detalle.linea_de_base && r.nuevas > 0 ? ' Es una lectura de puesta al día: lo nuevo queda en la bandeja sin aviso por WhatsApp.' : ''}`,
       );
       onLeido();
     } catch (e) {
@@ -431,10 +441,8 @@ function LecturaPortal({
             : estado.errores_consecutivos > 0
               ? `Lectura automática del portal con problemas (${estado.errores_consecutivos} intentos fallidos)${estado.ultimo_error ? `: ${estado.ultimo_error}` : ''}${estado.ultimo_ok ? ` Última lectura buena ${hace(estado.ultimo_ok)}.` : ''}`
               : estado.ultimo_ok
-                ? `Lectura automática del portal activa: última lectura ${hace(estado.ultimo_ok)} (${estado.ultimas_vistas} leídas, ${estado.ultimas_nuevas} nuevas).`
-                : estado.causas_importadas === 0
-                  ? 'Lectura automática del portal lista, pero todavía no hay causas importadas desde la extensión.'
-                  : 'Lectura automática del portal lista: todavía no hizo su primera lectura.';
+                ? `Lectura automática del portal activa: última lectura ${hace(estado.ultimo_ok)} (${estado.ultimas_vistas} leídas, ${estado.ultimas_nuevas} nuevas).${estado.detalle?.alta_mas_reciente ? ` La novedad más reciente que vio es del ${fechaYHora(estado.detalle.alta_mas_reciente)}.` : ''}${estado.detalle ? filtroUsado(estado.detalle) : ''}`
+                : 'Lectura automática del portal lista: todavía no hizo su primera lectura.';
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-text-gray-light">
