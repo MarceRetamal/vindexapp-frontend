@@ -1,5 +1,22 @@
 import { pedido } from './http';
 
+/** Qué vio la última lectura del portal (cantidades y fechas; nunca datos de causas). */
+export interface DetalleLectura {
+  paginas_leidas: number;
+  paginas_del_portal: number;
+  vistas: number;
+  nuevas: number;
+  de_causas_importadas: number;
+  de_otras_causas: number;
+  /** Filtro "Procesada" que se usó, y las opciones que ofrece el portal. */
+  filtro_procesada: string | null;
+  opciones_procesada: string[];
+  /** AAAA-MM-DDTHH:MM:SS */
+  alta_mas_reciente: string | null;
+  alta_mas_antigua: string | null;
+  linea_de_base: boolean;
+}
+
 export interface EstadoPortal {
   configurado: boolean;
   faltan: string[];
@@ -12,14 +29,17 @@ export interface EstadoPortal {
   pausada: boolean;
   ultimas_nuevas: number;
   ultimas_vistas: number;
+  detalle: DetalleLectura | null;
 }
 
 export interface ResultadoLectura {
   leidas: number;
   nuevas: number;
-  descartadas: number;
+  de_causas_importadas: number;
+  de_otras_causas: number;
   paginas: number;
   primera: boolean;
+  detalle: DetalleLectura;
 }
 
 export interface CausaPortal {
