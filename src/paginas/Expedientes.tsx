@@ -12,6 +12,10 @@ import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { MarcaPortal } from '../componentes/MarcaPortal';
+import { Chips } from '../componentes/BarraFiltros';
+import { InsigniaRol, SelectorRol } from '../componentes/RolProfesional';
+import type { RolProfesional } from '../api/expedientes';
+import { useSearchParams } from 'react-router';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 
@@ -19,6 +23,7 @@ const campoClases = 'rounded-sharp bg-graphite border-line focus-visible:ring-si
 const etiquetaClases = 'text-xs text-text-gray-light';
 
 type FiltroEstado = 'vigentes' | 'archivados' | 'todos';
+type FiltroRol = 'todos' | 'particular' | 'deas' | 'asesor_incapaces' | 'sin_rol' | 'sin_cliente';
 
 export function Expedientes() {
   const navegar = useNavigate();
@@ -29,6 +34,9 @@ export function Expedientes() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroEstado>('vigentes');
+  const [params, setParams] = useSearchParams();
+  const filtroRol = (['particular', 'deas', 'asesor_incapaces', 'sin_rol', 'sin_cliente'].includes(params.get('rol') ?? '') ? params.get('rol') : 'todos') as FiltroRol;
+  const setFiltroRol = (v: FiltroRol) => setParams(v === 'todos' ? {} : { rol: v }, { replace: true });
 
   function cargar() {
     setCargando(true);
@@ -50,9 +58,11 @@ export function Expedientes() {
       expedientes.filter(
         (e) =>
           (filtro === 'todos' || (filtro === 'archivados') === (e.estado === 'Archivado')) &&
-          coincide(busqueda, `${e.caratula} ${e.numero ?? ''} ${e.juzgado ?? ''} ${e.fuero ?? ''} ${e.cliente_apellido} ${e.cliente_nombre}`)
+          (filtroRol === 'todos' ||
+            (filtroRol === 'sin_cliente' ? e.cliente_id === null : filtroRol === 'sin_rol' ? e.rol_profesional === null : e.rol_profesional === filtroRol)) &&
+          coincide(busqueda, `${e.caratula} ${e.numero ?? ''} ${e.juzgado ?? ''} ${e.fuero ?? ''} ${e.cliente_apellido ?? ''} ${e.cliente_nombre ?? ''}`)
       ),
-    [expedientes, filtro, busqueda]
+    [expedientes, filtro, busqueda, filtroRol]
   );
 
   return (
@@ -90,6 +100,24 @@ export function Expedientes() {
             { valor: 'todos', texto: 'Todos', cantidad: expedientes.length },
           ]}
         />
+      )}
+
+      {!cargando && expedientes.length > 0 && (
+        <div className="mb-4">
+          <Chips
+            etiqueta="Rol profesional"
+            valor={filtroRol}
+            onCambio={setFiltroRol}
+            opciones={[
+              { valor: 'todos', texto: 'Todos los roles' },
+              { valor: 'particular', texto: 'Particular', cantidad: vigentes.filter((e) => e.rol_profesional === 'particular').length },
+              { valor: 'deas', texto: 'DEAS', cantidad: vigentes.filter((e) => e.rol_profesional === 'deas').length },
+              { valor: 'asesor_incapaces', texto: 'Asesor de incapaces', cantidad: vigentes.filter((e) => e.rol_profesional === 'asesor_incapaces').length },
+              { valor: 'sin_rol', texto: 'Sin rol', cantidad: vigentes.filter((e) => e.rol_profesional === null).length },
+              { valor: 'sin_cliente', texto: 'Cliente por asignar', cantidad: vigentes.filter((e) => e.cliente_id === null).length },
+            ]}
+          />
+        </div>
       )}
 
       {cargando ? (
@@ -151,7 +179,7 @@ function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; on
     }
   }
 
-  const detalle = [`${expediente.cliente_apellido}, ${expediente.cliente_nombre}`, expediente.numero ? `N° ${expediente.numero}` : null, expediente.fuero].filter(Boolean).join(' · ');
+  const detalle = [expediente.cliente_id ? `${expediente.cliente_apellido ?? ''}, ${expediente.cliente_nombre ?? ''}` : 'Cliente por asignar', expediente.numero ? `N° ${expediente.numero}` : null, expediente.fuero].filter(Boolean).join(' · ');
 
   return (
     <div>
@@ -185,7 +213,10 @@ function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; on
           </>
         }
       >
-        <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{expediente.caratula}</div>
+        <div className="flex items-start gap-2">
+          <InsigniaRol rol={expediente.rol_profesional} />
+          <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{expediente.caratula}</div>
+        </div>
         <div className="mt-0.5 truncate text-xs text-text-gray-light">{detalle}</div>
         {expediente.juzgado && <div className="truncate text-xs text-silver-deep">{expediente.juzgado}</div>}
       </FilaLista>
@@ -299,6 +330,7 @@ function FormularioNuevoExpediente({
   const [numero, setNumero] = useState('');
   const [fuero, setFuero] = useState('');
   const [juzgado, setJuzgado] = useState('');
+  const [rol, setRol] = useState<RolProfesional | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -313,6 +345,7 @@ function FormularioNuevoExpediente({
         numero: numero || undefined,
         fuero: fuero || undefined,
         juzgado: juzgado || undefined,
+        rol_profesional: rol,
       });
       onCreado(creado.id);
     } catch (err) {
@@ -365,6 +398,10 @@ function FormularioNuevoExpediente({
       <div className="flex flex-col gap-1 sm:col-span-2">
         <label htmlFor="nuevo-expediente-juzgado" className={etiquetaClases}>Juzgado</label>
         <Input id="nuevo-expediente-juzgado" className={campoClases} value={juzgado} onChange={(e) => setJuzgado(e.target.value)} />
+      </div>
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <span className={etiquetaClases}>Tu rol en el expediente</span>
+        <SelectorRol valor={rol} onCambio={setRol} />
       </div>
 
       {error && <div className="sm:col-span-2 text-warning text-sm">{error}</div>}

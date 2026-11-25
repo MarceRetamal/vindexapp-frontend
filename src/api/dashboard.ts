@@ -45,6 +45,9 @@ export interface ItemDia {
   caratula: string | null;
   cliente: string | null;
   detalle: string | null;
+  rol: import('./expedientes').RolProfesional | null;
+  /** Tarea creada sola desde un proveído, sin verificar todavía. */
+  a_verificar: boolean;
 }
 
 export interface AgendaDia {

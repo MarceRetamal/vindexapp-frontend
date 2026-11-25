@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { VerificarPlazo } from '../componentes/VerificarPlazo';
 import { Link } from 'react-router';
 import { CheckIcon } from 'lucide-react';
 import { api, type TareaListado } from '../api/tareas';
@@ -300,7 +301,8 @@ function FilaTarea({
           </Link>
         )}
         {contexto && <div className="mt-0.5 truncate text-xs text-text-gray-light">{contexto}</div>}
-        {tarea.descripcion && <p className="mt-1 line-clamp-2 text-xs text-silver-deep">{tarea.descripcion}</p>}
+        {tarea.descripcion && tarea.automatica !== 1 && <p className="mt-1 line-clamp-2 text-xs text-silver-deep">{tarea.descripcion}</p>}
+        {!completada && <VerificarPlazo tarea={tarea} onCambio={onCambiado} />}
       </FilaLista>
 
       {editando && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { InsigniaRol } from '../componentes/RolProfesional';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, CalendarDaysIcon, CheckIcon, HourglassIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react';
@@ -204,6 +205,14 @@ function FilaAgenda({ item, demora }: { item: ItemDia; demora: number }) {
       >
         <BloqueFecha fecha={item.fecha} dias={item.dias} hora={item.hora} />
         <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {item.expediente_id && <InsigniaRol rol={item.rol} />}
+            {item.a_verificar && (
+              <span className="inline-flex h-5 items-center rounded-sharp border border-warning/60 bg-warning/10 px-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-warning" title="Vencimiento calculado automáticamente a partir del proveído: verificalo">
+                Verificar
+              </span>
+            )}
+          </div>
           <div className="line-clamp-2 text-[15px] font-bold leading-snug text-white">{item.titulo}</div>
           {contexto && <div className="mt-0.5 truncate text-xs text-text-gray-light">{contexto}</div>}
           <div className={`mt-1 truncate text-xs ${item.dias < 0 ? 'font-bold text-warning' : item.dias === 0 ? 'font-bold text-white' : 'text-silver-deep'}`}>{cuando}</div>

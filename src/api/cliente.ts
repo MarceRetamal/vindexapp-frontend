@@ -73,3 +73,24 @@ export const api = {
       method: 'DELETE',
     }),
 };
+
+export interface ExpedienteDisponible {
+  id: string;
+  caratula: string;
+  numero: string | null;
+  juzgado: string | null;
+  fuero: string | null;
+  rol_profesional: import('./expedientes').RolProfesional | null;
+  inicio: string | null;
+  certeza: 'alta' | 'posible' | null;
+  motivo: string | null;
+}
+
+export const apiAsignacion = {
+  disponibles: (clienteId: string) => pedido<ExpedienteDisponible[]>(`/clientes/${encodeURIComponent(clienteId)}/expedientes-disponibles`),
+  asignar: (clienteId: string, expedienteIds: string[], rol: import('./expedientes').RolProfesional | null) =>
+    pedido<{ ok: true; asignados: number }>(`/clientes/${encodeURIComponent(clienteId)}/expedientes`, {
+      method: 'POST',
+      body: JSON.stringify({ expediente_ids: expedienteIds, ...(rol ? { rol_profesional: rol } : {}) }),
+    }),
+};
