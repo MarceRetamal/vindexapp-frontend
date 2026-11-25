@@ -76,6 +76,34 @@ body {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.045);
 }
 
+/* Vidrio (pedido de Marcelo, 25/11/2026, para la bandeja de WhatsApp): Grafito translúcido con desenfoque, filete plata
+   muy tenue y el mismo reflejo de 1px arriba. Solo se ve sobre el fondo con brillos de `fondo-vidrio`. */
+@utility vidrio {
+  background: rgb(21 24 30 / 0.62);
+  border: 1px solid rgb(199 204 211 / 0.10);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 40px -24px rgb(0 0 0 / 0.8);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+/* Más claro, para lo que flota sobre otro vidrio (paleta de respuestas, burbujas propias). */
+@utility vidrio-claro {
+  background: rgb(199 204 211 / 0.08);
+  border: 1px solid rgb(199 204 211 / 0.16);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+/* Fondo de la pantalla con vidrio: dos brillos plata muy bajos sobre el Negro Estructural. Es la única concesión a un
+   degradé fuera del isotipo, y existe porque sin algo detrás el desenfoque no se percibe. */
+@utility fondo-vidrio {
+  background:
+    radial-gradient(60% 50% at 12% 0%, rgb(199 204 211 / 0.07), transparent 70%),
+    radial-gradient(50% 45% at 95% 100%, rgb(139 146 156 / 0.08), transparent 70%),
+    var(--color-structural-black);
+}
+
 /* Rótulo chico de sección: lo único que va en mayúsculas espaciadas dentro de una pantalla, además del título. */
 @utility eyebrow {
   font-size: 11px;
