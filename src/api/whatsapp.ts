@@ -23,6 +23,7 @@ export interface ConversacionResumen {
 
 export interface Conversacion extends ConversacionResumen {
   ficha: string;
+  subtema: string | null;
   relato: string | null;
   ventana_abierta: boolean;
 }
@@ -66,4 +67,39 @@ export const api = {
   adjunto: (id: string) => pedido<{ url_descarga: string; nombre: string; tipo: string }>(`/whatsapp/mensajes/${encodeURIComponent(id)}/adjunto`),
   guardarDocumento: (id: string, datos: { cliente_id?: string; expediente_id?: string; categoria: string }) =>
     pedido<{ ok: true; documento_id: string }>(`/whatsapp/mensajes/${encodeURIComponent(id)}/documento`, { method: 'POST', body: JSON.stringify(datos) }),
+};
+
+export type CategoriaPlantilla = 'presupuesto' | 'evaluacion' | 'documentacion' | 'reunion' | 'seguimiento' | 'honorarios' | 'otra';
+
+export const CATEGORIAS_PLANTILLA: { valor: CategoriaPlantilla; texto: string }[] = [
+  { valor: 'evaluacion', texto: 'Evaluación' },
+  { valor: 'presupuesto', texto: 'Presupuesto' },
+  { valor: 'documentacion', texto: 'Documentación' },
+  { valor: 'reunion', texto: 'Reunión' },
+  { valor: 'seguimiento', texto: 'Seguimiento' },
+  { valor: 'honorarios', texto: 'Honorarios' },
+  { valor: 'otra', texto: 'Otra' },
+];
+
+export interface Plantilla {
+  id: string;
+  titulo: string;
+  categoria: CategoriaPlantilla;
+  texto: string;
+  orden: number;
+  usos: number;
+}
+
+export interface DatosPlantilla {
+  titulo: string;
+  categoria: CategoriaPlantilla;
+  texto: string;
+}
+
+export const apiPlantillas = {
+  listar: () => pedido<{ plantillas: Plantilla[] }>('/whatsapp/plantillas'),
+  crear: (d: DatosPlantilla) => pedido<{ id: string }>('/whatsapp/plantillas', { method: 'POST', body: JSON.stringify(d) }),
+  editar: (id: string, d: Partial<DatosPlantilla>) => pedido<{ ok: true }>(`/whatsapp/plantillas/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(d) }),
+  borrar: (id: string) => pedido<{ ok: true }>(`/whatsapp/plantillas/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  usar: (id: string) => pedido<{ ok: true }>(`/whatsapp/plantillas/${encodeURIComponent(id)}/uso`, { method: 'POST' }),
 };

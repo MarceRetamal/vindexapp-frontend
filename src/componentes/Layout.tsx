@@ -218,7 +218,7 @@ export function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 min-w-0 w-full max-w-[1180px] px-4 py-6 sm:px-6 md:px-12 md:py-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <main className={`flex-1 min-w-0 w-full ${location.pathname === '/whatsapp' ? 'max-w-none' : 'max-w-[1180px]'} px-4 py-6 sm:px-6 md:px-12 md:py-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))]`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
