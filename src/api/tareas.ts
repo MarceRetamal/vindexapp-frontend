@@ -14,6 +14,11 @@ export interface Tarea {
   creado_por: string | null;
   creado_en: number;
   completado_en: number | null;
+  /** 1 = creada sola a partir de un proveído con plazo (migración 0023). */
+  automatica?: number;
+  verificada_en?: number | null;
+  /** JSON con el cómputo del plazo (régimen, días, fecha de notificación, normas, advertencias). */
+  calculo?: string | null;
 }
 
 /** Tarea de la pantalla Tareas: judicial (con expediente) o extrajudicial (sin expediente). */
@@ -77,6 +82,12 @@ export const api = {
     pedido<{ id: string; estado: string }>(`/tareas/${id}/estado`, {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
+    }),
+
+  verificarTarea: (id: string, verificada = true) =>
+    pedido<{ id: string; verificada: boolean }>(`/tareas/${id}/verificar`, {
+      method: 'POST',
+      body: JSON.stringify({ verificada }),
     }),
 
   eliminarTarea: (id: string) =>

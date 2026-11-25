@@ -9,6 +9,10 @@ import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelPortal } from '../componentes/PanelPortal';
 import { EnlaceCliente, SituacionExpediente } from '../componentes/SituacionExpediente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
+import { InsigniaRol, SelectorRol } from '../componentes/RolProfesional';
+import { VerificarPlazo } from '../componentes/VerificarPlazo';
+import { api as apiClientes, type Cliente } from '../api/cliente';
+import type { RolProfesional } from '../api/expedientes';
 import { EmptyState } from '../componentes/EmptyState';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
@@ -148,10 +152,18 @@ export function ExpedienteDetalle() {
 
       <header className="mb-8 mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="eyebrow">{expediente.fuero ?? 'Expediente'}</p>
+          <p className="eyebrow flex flex-wrap items-center gap-2">
+            {expediente.fuero ?? 'Expediente'}
+            <InsigniaRol rol={expediente.rol_profesional} grande />
+            {expediente.origen === 'portal' && <span className="font-normal normal-case tracking-normal text-text-gray-light">· sincronizado del portal</span>}
+          </p>
           <h1 className="mt-2 break-words text-2xl font-black leading-tight text-white sm:text-[30px]">{expediente.caratula}</h1>
           <p className="mt-3 text-sm text-silver">
-            <EnlaceCliente clienteId={expediente.cliente_id} nombre={`${expediente.cliente_apellido}, ${expediente.cliente_nombre}`} />
+            {expediente.cliente_id ? (
+              <EnlaceCliente clienteId={expediente.cliente_id} nombre={`${expediente.cliente_apellido ?? ''}, ${expediente.cliente_nombre ?? ''}`} />
+            ) : (
+              <span className="text-warning">Cliente por asignar</span>
+            )}
             {expediente.rol_procesal ? ` · ${expediente.rol_procesal}` : ''}
           </p>
           <p className="mt-1 text-xs text-text-gray-light">{[expediente.numero, expediente.juzgado, expediente.departamento && !expediente.juzgado?.toLowerCase().includes(expediente.departamento.toLowerCase()) ? expediente.departamento : null].filter(Boolean).join(' · ')}</p>
@@ -174,6 +186,8 @@ export function ExpedienteDetalle() {
       </header>
 
       {errorEliminar && <ErrorBanner message={errorEliminar} />}
+
+      <PanelRolYCliente expediente={expediente} onCambio={setExpediente} />
 
       <SituacionExpediente expedienteId={id!} actuaciones={actuaciones} tareas={tareas} />
 
@@ -627,6 +641,7 @@ function FilaTarea({
             Vence: {formatearFechaISO(tarea.fecha_limite)}
           </span>
         )}
+        {!completada && <VerificarPlazo tarea={tarea} onCambio={onEliminada} />}
       </div>
       <BotonEliminar
         descripcion={`la tarea "${tarea.titulo}"`}
@@ -747,5 +762,94 @@ function FormularioNuevaTarea({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Rol del abogado en este expediente y, si se creó desde el portal sin cliente, la asignación del cliente. Va arriba
+ * de todo porque es lo primero que hay que saber de una causa (pedido de Marcelo: con el volumen DEAS no se puede
+ * memorizar el rol de cada una).
+ */
+function PanelRolYCliente({ expediente, onCambio }: { expediente: Expediente; onCambio: (e: Expediente) => void }) {
+  const [clientes, setClientes] = useState<Cliente[] | null>(null);
+  const [clienteElegido, setClienteElegido] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const sinCliente = expediente.cliente_id === null;
+  const sinRol = expediente.rol_profesional === null;
+
+  useEffect(() => {
+    if (sinCliente) apiClientes.listarClientes().then(setClientes).catch(() => setClientes([]));
+  }, [sinCliente]);
+
+  if (!sinCliente && !sinRol) {
+    return (
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <span className="text-xs text-text-gray-light">Tu rol:</span>
+        <SelectorRol valor={expediente.rol_profesional} onCambio={(r) => void guardar({ rol_profesional: r })} deshabilitado={ocupado} />
+        {error && <span role="alert" className="text-xs text-warning">{error}</span>}
+      </div>
+    );
+  }
+
+  async function guardar(datos: { rol_profesional?: RolProfesional | null; cliente_id?: string | null }) {
+    setOcupado(true);
+    setError(null);
+    try {
+      onCambio(await apiExpedientes.editarExpediente(expediente.id, datos));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo guardar.');
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <section className="superficie mb-6 border-warning/40 p-5">
+      <p className="eyebrow text-warning">Falta completar</p>
+      {sinRol && (
+        <div className="mt-3">
+          <p className="mb-2 text-sm text-white">¿Cuál es tu rol en este expediente?</p>
+          <SelectorRol valor={null} onCambio={(r) => void guardar({ rol_profesional: r })} deshabilitado={ocupado} />
+        </div>
+      )}
+      {sinCliente && (
+        <div className="mt-4">
+          <p className="mb-2 text-sm text-white">
+            {expediente.rol_profesional === 'deas' ? 'Asigná a la persona defendida' : expediente.rol_profesional === 'asesor_incapaces' ? 'Asigná a la persona representada' : 'Asigná el cliente'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={clienteElegido}
+              onChange={(e) => setClienteElegido(e.target.value)}
+              disabled={ocupado || clientes === null}
+              className="h-9 min-w-[240px] flex-1 rounded-sharp border border-line bg-graphite px-2 text-sm text-white"
+              aria-label="Cliente"
+            >
+              <option value="">Elegí un cliente…</option>
+              {(clientes ?? [])
+                .slice()
+                .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`, 'es'))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.apellido}, {c.nombre}
+                  </option>
+                ))}
+            </select>
+            <Button
+              disabled={!clienteElegido || ocupado}
+              onClick={() => void guardar({ cliente_id: clienteElegido })}
+              className="rounded-sharp bg-gradient-to-br from-silver via-silver-deep to-silver text-structural-black font-bold hover:brightness-110"
+            >
+              Asignar
+            </Button>
+            <Link to="/clientes" className="self-center text-xs text-silver underline-offset-2 hover:underline">
+              Crear cliente nuevo
+            </Link>
+          </div>
+        </div>
+      )}
+      {error && <p role="alert" className="mt-3 text-xs text-warning">{error}</p>}
+    </section>
   );
 }

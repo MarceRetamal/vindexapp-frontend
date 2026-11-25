@@ -1,9 +1,13 @@
 import { ESTUDIO_ID, pedido } from './http';
 
+/** Papel del abogado en el expediente. null = sin definir. */
+export type RolProfesional = 'particular' | 'deas' | 'asesor_incapaces';
+
 export interface Expediente {
   id: string;
   estudio_id: string;
-  cliente_id: string;
+  /** null = expediente creado desde el portal, todavía sin cliente asignado. */
+  cliente_id: string | null;
   caratula: string;
   numero: string | null;
   fuero: string | null;
@@ -16,8 +20,10 @@ export interface Expediente {
   motivo_baja: string | null;
   notas: string | null;
   creado_en: number;
-  cliente_nombre: string;
-  cliente_apellido: string;
+  cliente_nombre: string | null;
+  cliente_apellido: string | null;
+  rol_profesional: RolProfesional | null;
+  origen: 'manual' | 'portal';
   /** Solo en el listado: causas del portal vinculadas y novedades suyas sin revisar. */
   causas_portal?: number;
   novedades_pendientes?: number;
@@ -25,6 +31,8 @@ export interface Expediente {
 
 export const api = {
   listarExpedientes: () => pedido<Expediente[]>(`/expedientes?estudio_id=${ESTUDIO_ID}`),
+
+  listarSinCliente: () => pedido<Expediente[]>('/expedientes?sin_cliente=1'),
 
   listarDeCliente: (clienteId: string) => pedido<Expediente[]>(`/expedientes?cliente_id=${encodeURIComponent(clienteId)}`),
 
@@ -41,6 +49,7 @@ export const api = {
     rol_procesal?: string;
     inicio?: string;
     notas?: string;
+    rol_profesional?: RolProfesional | null;
   }) =>
     pedido<{ id: string }>('/expedientes', {
       method: 'POST',
@@ -57,6 +66,8 @@ export const api = {
       departamento?: string;
       rol_procesal?: string;
       notas?: string;
+      cliente_id?: string | null;
+      rol_profesional?: RolProfesional | null;
     }
   ) =>
     pedido<Expediente>(`/expedientes/${id}?estudio_id=${ESTUDIO_ID}`, {

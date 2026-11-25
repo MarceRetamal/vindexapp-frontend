@@ -6,6 +6,7 @@ import { EstadoBadge } from '../componentes/EstadoBadge';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelCausasCliente } from '../componentes/PanelCausasCliente';
+import { PanelAsignarExpedientes } from '../componentes/PanelAsignarExpedientes';
 import { SituacionCliente } from '../componentes/SituacionCliente';
 import { enlaceWhatsApp } from '../lib/telefono';
 import { EmptyState } from '../componentes/EmptyState';
@@ -15,6 +16,7 @@ import { ListSkeleton } from '../componentes/ListSkeleton';
 const accionContacto = 'inline-flex h-9 items-center gap-2 rounded-full border border-line px-3.5 text-[13px] text-silver transition-colors hover:border-silver-deep hover:text-white';
 
 export function ClienteDetalle() {
+  const [asignados, setAsignados] = useState(0);
   const { id } = useParams<{ id: string }>();
   const navegar = useNavigate();
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
@@ -141,7 +143,8 @@ export function ClienteDetalle() {
             )}
           </section>
 
-          <PanelCausasCliente clienteId={id!} />
+          <PanelCausasCliente key={`causas-${String(asignados)}`} clienteId={id!} />
+          <PanelAsignarExpedientes clienteId={id!} onAsignado={() => setAsignados((n) => n + 1)} />
         </div>
 
         <div className="flex flex-col gap-6">

@@ -9,6 +9,7 @@ import { ErrorBanner } from './ErrorBanner';
 import { EstadoBadge } from './EstadoBadge';
 import { ListSkeleton } from './ListSkeleton';
 import { MarcaPortal } from './MarcaPortal';
+import { InsigniaRol } from './RolProfesional';
 import { Button } from '@/componentes/ui/button';
 
 const tituloClases = 'text-xs font-bold text-silver mb-3 uppercase tracking-[0.2em]';
@@ -118,7 +119,10 @@ export function PanelCausasCliente({ clienteId }: { clienteId: string }) {
                 className="flex flex-col sm:flex-row sm:items-center gap-2 py-3 border-b border-line no-underline hover:bg-white/[0.02]"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-white break-words">{e.caratula}</div>
+                  <div className="flex items-start gap-2 font-medium text-white break-words">
+                    <InsigniaRol rol={e.rol_profesional} />
+                    <span>{e.caratula}</span>
+                  </div>
                   <div className="text-xs font-mono text-text-gray-light break-words">
                     {e.numero ? `Nº ${e.numero}` : 'Sin número'}
                     {e.juzgado ? ` · ${e.juzgado}` : ''}
