@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CheckIcon, KeyRoundIcon, MessageCircleIcon } from 'lucide-react';
+import { BuildingIcon, CheckIcon, KeyRoundIcon, MessageCircleIcon } from 'lucide-react';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
-import { api, type ConfiguracionEstudio } from '../api/configuracion';
+import { api, type ConfiguracionEstudio, type DatosEstudio } from '../api/configuracion';
 import { api as alertasApi, mensajeDeError } from '../api/alertas';
 import { api as portalApi, type EstadoPortal } from '../api/portal';
 import { ErrorBanner } from '../componentes/ErrorBanner';
@@ -41,7 +41,7 @@ export function Configuracion() {
       <PageHeader
         eyebrow="Estudio"
         title="Configuración"
-        descripcion="Los avisos por WhatsApp y la lectura del portal de la SCBA son tuyos: los cargás vos y solo vos los manejás."
+        descripcion="Los datos del estudio, los avisos por WhatsApp y la lectura del portal de la SCBA son tuyos: los cargás vos y solo vos los manejás."
       />
       {error && <ErrorBanner message={error} />}
       {!cfg && !error && <ListSkeleton rows={2} />}
@@ -52,6 +52,7 @@ export function Configuracion() {
               Solo el titular del estudio puede cambiar esto. En la demostración tampoco se puede.
             </p>
           )}
+          <SeccionEstudio />
           <SeccionWhatsApp cfg={cfg} recargar={recargar} />
           <SeccionPortal cfg={cfg} recargar={recargar} />
         </div>
@@ -248,6 +249,91 @@ function SeccionWhatsApp({ cfg, recargar }: { cfg: ConfiguracionEstudio; recarga
         </form>
       )}
 
+      <Mensaje texto={mensaje?.texto ?? null} tipo={mensaje?.tipo ?? 'ok'} />
+    </section>
+  );
+}
+
+const CAMPOS_ESTUDIO: { clave: keyof Omit<DatosEstudio, 'puede_editar'>; etiqueta: string; ayuda?: string; placeholder?: string }[] = [
+  {
+    clave: 'domicilio_procesal',
+    etiqueta: 'Domicilio procesal',
+    ayuda: 'Va en los escritos que genera el sistema. Sin este dato no se genera ninguno.',
+    placeholder: 'calle 12 N° 345, La Plata',
+  },
+  { clave: 'nombre', etiqueta: 'Nombre del estudio' },
+  { clave: 'matricula', etiqueta: 'Matrícula', placeholder: 'T° … F° … CALP' },
+  { clave: 'domicilio', etiqueta: 'Domicilio del estudio' },
+  { clave: 'localidad', etiqueta: 'Localidad' },
+];
+
+/** Datos que el generador pone en los escritos. Los ve todo el estudio; los cambia el titular. */
+function SeccionEstudio() {
+  const [datos, setDatos] = useState<DatosEstudio | null>(null);
+  const [borrador, setBorrador] = useState<Record<string, string>>({});
+  const [ocupado, setOcupado] = useState(false);
+  const [mensaje, setMensaje] = useState<{ texto: string; tipo: 'ok' | 'error' } | null>(null);
+
+  const cargar = useCallback((d: DatosEstudio) => {
+    setDatos(d);
+    setBorrador(Object.fromEntries(CAMPOS_ESTUDIO.map(({ clave }) => [clave, d[clave] ?? ''])));
+  }, []);
+
+  useEffect(() => {
+    api.obtenerEstudio().then(cargar).catch((e: Error) => setMensaje({ texto: e.message, tipo: 'error' }));
+  }, [cargar]);
+
+  if (!datos) return mensaje ? <Mensaje texto={mensaje.texto} tipo="error" /> : null;
+
+  const cambios = Object.fromEntries(
+    CAMPOS_ESTUDIO.filter(({ clave }) => (borrador[clave] ?? '').trim() !== (datos[clave] ?? '')).map(({ clave }) => [clave, (borrador[clave] ?? '').trim()])
+  );
+  const hayCambios = Object.keys(cambios).length > 0;
+  const falta = !datos.domicilio_procesal;
+
+  async function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    setOcupado(true);
+    setMensaje(null);
+    try {
+      cargar(await api.guardarEstudio(cambios));
+      setMensaje({ texto: 'Datos guardados.', tipo: 'ok' });
+    } catch (err) {
+      setMensaje({ texto: mensajeDeError(err), tipo: 'error' });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <section className="superficie p-6 sm:p-8" aria-labelledby="cfg-estudio">
+      <Encabezado icono={BuildingIcon} titulo="Datos del estudio" estado={falta ? 'Falta el domicilio procesal' : 'Completo'} activo={!falta} />
+      <h3 id="cfg-estudio" className="sr-only">Datos del estudio</h3>
+      <form onSubmit={(e) => void guardar(e)} className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2">
+        {CAMPOS_ESTUDIO.map(({ clave, etiqueta, ayuda, placeholder }) => (
+          <div key={clave} className={clave === 'domicilio_procesal' ? 'sm:col-span-2' : undefined}>
+            <label htmlFor={`cfg-${clave}`} className={etiquetaClases}>{etiqueta}</label>
+            <Input
+              id={`cfg-${clave}`}
+              className={`${campoClases} mt-1`}
+              value={borrador[clave] ?? ''}
+              onChange={(e) => setBorrador((b) => ({ ...b, [clave]: e.target.value }))}
+              placeholder={placeholder}
+              maxLength={200}
+              disabled={!datos.puede_editar || ocupado}
+              required={clave === 'nombre'}
+            />
+            {ayuda && <p className="mt-1 text-xs text-text-gray-light">{ayuda}</p>}
+          </div>
+        ))}
+        {datos.puede_editar && (
+          <div className="sm:col-span-2">
+            <Button type="submit" className={botonPrincipal} disabled={!hayCambios || ocupado}>
+              {ocupado ? 'Guardando…' : 'Guardar'}
+            </Button>
+          </div>
+        )}
+      </form>
       <Mensaje texto={mensaje?.texto ?? null} tipo={mensaje?.tipo ?? 'ok'} />
     </section>
   );

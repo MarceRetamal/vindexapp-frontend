@@ -23,7 +23,23 @@ export interface ConfiguracionEstudio {
   };
 }
 
+/** Datos del estudio que van en los escritos (el domicilio procesal sale de acá). */
+export interface DatosEstudio {
+  nombre: string;
+  matricula: string | null;
+  domicilio: string | null;
+  localidad: string | null;
+  domicilio_procesal: string | null;
+  puede_editar: boolean;
+}
+
+export type CambiosEstudio = Partial<Omit<DatosEstudio, 'puede_editar'>>;
+
 export const api = {
+  obtenerEstudio: () => pedido<DatosEstudio>('/configuracion/estudio'),
+  guardarEstudio: (cambios: CambiosEstudio) =>
+    pedido<DatosEstudio>('/configuracion/estudio', { method: 'PATCH', body: JSON.stringify(cambios) }),
+
   obtener: () => pedido<ConfiguracionEstudio>('/configuracion'),
 
   /** Carga o cambia el número y manda un código a ese número por WhatsApp. */
