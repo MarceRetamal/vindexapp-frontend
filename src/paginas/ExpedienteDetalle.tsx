@@ -8,6 +8,7 @@ import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelPortal } from '../componentes/PanelPortal';
 import { PanelEstrategia } from '../componentes/PanelEstrategia';
+import { PanelIA } from '../componentes/PanelIA';
 import { EnlaceCliente, SituacionExpediente } from '../componentes/SituacionExpediente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { InsigniaRol, SelectorRol } from '../componentes/RolProfesional';
@@ -48,6 +49,7 @@ export function ExpedienteDetalle() {
   const { id } = useParams<{ id: string }>();
   const navegar = useNavigate();
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
+  const [versionNotas, setVersionNotas] = useState(0);
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,7 +281,9 @@ export function ExpedienteDetalle() {
             )}
           </section>
 
-          <PanelEstrategia expedienteId={id!} />
+          <PanelIA expedienteId={id!} alGuardarNota={() => setVersionNotas((v) => v + 1)} />
+
+          <PanelEstrategia key={versionNotas} expedienteId={id!} />
 
           <PanelDocumentos expedienteId={id} />
         </div>

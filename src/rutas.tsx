@@ -15,6 +15,7 @@ import { Plazos } from './paginas/Plazos';
 import { Configuracion } from './paginas/Configuracion';
 import { Jurisprudencia } from './paginas/Jurisprudencia';
 import { WhatsApp } from './paginas/WhatsApp';
+import { Asistente } from './paginas/Asistente';
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: 'configuracion', element: <Configuracion /> },
       { path: 'jurisprudencia', element: <Jurisprudencia /> },
       { path: 'whatsapp', element: <WhatsApp /> },
+      { path: 'asistente', element: <Asistente /> },
     ],
   },
 ]);

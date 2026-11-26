@@ -14,6 +14,7 @@ import { api as apiPortal, type DetalleLectura, type EstadoPortal } from '../api
 import { EmptyState } from '../componentes/EmptyState';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
+import { AnalisisProveido } from '../componentes/AnalisisProveido';
 import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { enlaceSeguro } from '../lib/texto';
@@ -340,6 +341,8 @@ function FilaNovedad({
       {!revisada && sugerencia && !sugerencia.propuesta && sugerencia.motivo && (
         <p className="mt-3 text-xs text-text-gray-light">Sin plazo propuesto: {sugerencia.motivo}</p>
       )}
+
+      {novedad.tiene_texto === 1 && <AnalisisProveido novedadId={novedad.id} />}
 
       {abierta && (
         <div className="mt-3 border border-line rounded-sharp bg-graphite p-4">
