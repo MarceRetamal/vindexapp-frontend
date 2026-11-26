@@ -55,7 +55,6 @@ export const CATEGORIAS_DOCUMENTO = [
 const tel = (t: string) => encodeURIComponent(t);
 
 export const api = {
-  resumen: () => pedido<{ conversaciones: number; sin_leer: number }>('/whatsapp/resumen'),
   listar: (q = '') => pedido<{ conversaciones: ConversacionResumen[] }>(`/whatsapp/conversaciones${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   abrir: (t: string) => pedido<{ conversacion: Conversacion; mensajes: MensajeWhatsApp[] }>(`/whatsapp/conversaciones/${tel(t)}`),
   responder: (t: string, texto: string) => pedido<{ ok: true }>(`/whatsapp/conversaciones/${tel(t)}/mensajes`, { method: 'POST', body: JSON.stringify({ texto }) }),

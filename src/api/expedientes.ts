@@ -32,8 +32,6 @@ export interface Expediente {
 export const api = {
   listarExpedientes: () => pedido<Expediente[]>(`/expedientes?estudio_id=${ESTUDIO_ID}`),
 
-  listarSinCliente: () => pedido<Expediente[]>('/expedientes?sin_cliente=1'),
-
   listarDeCliente: (clienteId: string) => pedido<Expediente[]>(`/expedientes?cliente_id=${encodeURIComponent(clienteId)}`),
 
   obtenerExpediente: (id: string) =>
