@@ -7,6 +7,7 @@ import { api as apiTareas, type Tarea } from '../api/tareas';
 import { BotonEliminar } from '../componentes/BotonEliminar';
 import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelPortal } from '../componentes/PanelPortal';
+import { PanelEstrategia } from '../componentes/PanelEstrategia';
 import { EnlaceCliente, SituacionExpediente } from '../componentes/SituacionExpediente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { InsigniaRol, SelectorRol } from '../componentes/RolProfesional';
@@ -277,6 +278,8 @@ export function ExpedienteDetalle() {
               </div>
             )}
           </section>
+
+          <PanelEstrategia expedienteId={id!} />
 
           <PanelDocumentos expedienteId={id} />
         </div>

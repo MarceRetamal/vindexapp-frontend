@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BuildingIcon, CheckIcon, KeyRoundIcon, MessageCircleIcon } from 'lucide-react';
+import { BuildingIcon, CheckIcon, KeyRoundIcon, MessageCircleIcon, UsersIcon } from 'lucide-react';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 import { api, type ConfiguracionEstudio, type DatosEstudio } from '../api/configuracion';
 import { api as alertasApi, mensajeDeError } from '../api/alertas';
 import { api as portalApi, type EstadoPortal } from '../api/portal';
+import { api as usuariosApi, ROLES_USUARIO, type RolUsuario, type UsuarioEstudio } from '../api/usuarios';
+import { sesionActual } from '../api/whoami';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { ListSkeleton } from '../componentes/ListSkeleton';
 import { PageHeader } from '../componentes/PageHeader';
@@ -53,6 +55,7 @@ export function Configuracion() {
             </p>
           )}
           <SeccionEstudio />
+          <SeccionUsuarios />
           <SeccionWhatsApp cfg={cfg} recargar={recargar} />
           <SeccionPortal cfg={cfg} recargar={recargar} />
         </div>
@@ -334,6 +337,171 @@ function SeccionEstudio() {
           </div>
         )}
       </form>
+      <Mensaje texto={mensaje?.texto ?? null} tipo={mensaje?.tipo ?? 'ok'} />
+    </section>
+  );
+}
+
+const etiquetaRol = (rol: RolUsuario) => ROLES_USUARIO.find((r) => r.valor === rol)?.etiqueta ?? rol;
+
+/**
+ * Quiénes entran al panel del estudio. Los ve todo el estudio; los habilita, cambia de rol o da de baja el titular.
+ * Una baja no borra a la persona: deja de entrar y su nombre sigue en lo que hizo.
+ */
+function SeccionUsuarios() {
+  const { usuario: yo, demo } = sesionActual();
+  const esTitular = yo?.rol === 'titular' && !demo;
+  const [usuarios, setUsuarios] = useState<UsuarioEstudio[] | null>(null);
+  const [mensaje, setMensaje] = useState<{ texto: string; tipo: 'ok' | 'error' } | null>(null);
+  const [ocupado, setOcupado] = useState<string | null>(null);
+  const [agregando, setAgregando] = useState(false);
+  const [nuevo, setNuevo] = useState({ nombre: '', apellido: '', email: '', rol: 'asociado' as RolUsuario });
+
+  const cargar = useCallback(() => {
+    usuariosApi.listar().then(setUsuarios).catch((e: Error) => setMensaje({ texto: e.message, tipo: 'error' }));
+  }, []);
+  useEffect(cargar, [cargar]);
+
+  async function cambiar(u: UsuarioEstudio, cambios: { rol?: RolUsuario; activo?: boolean }) {
+    if (cambios.activo === false && !window.confirm(`${u.nombre} ${u.apellido} no va a poder entrar más al panel. ¿Lo damos de baja?`)) return;
+    setOcupado(u.id);
+    setMensaje(null);
+    try {
+      await usuariosApi.actualizar(u.id, cambios);
+      setMensaje({ texto: 'Cambio guardado.', tipo: 'ok' });
+    } catch (err) {
+      setMensaje({ texto: mensajeDeError(err), tipo: 'error' });
+    } finally {
+      setOcupado(null);
+      cargar();
+    }
+  }
+
+  async function agregar(e: React.FormEvent) {
+    e.preventDefault();
+    setOcupado('nuevo');
+    setMensaje(null);
+    try {
+      const creado = await usuariosApi.crear({ ...nuevo, nombre: nuevo.nombre.trim(), apellido: nuevo.apellido.trim() });
+      setNuevo({ nombre: '', apellido: '', email: '', rol: 'asociado' });
+      setAgregando(false);
+      setMensaje({
+        texto: `Listo. Falta un paso para que ${creado.email} pueda entrar: agregar ese email al acceso del panel en Cloudflare (Zero Trust, Access). Si no lo administrás vos, pedíselo a quien lo hace.`,
+        tipo: 'ok',
+      });
+    } catch (err) {
+      setMensaje({ texto: mensajeDeError(err), tipo: 'error' });
+    } finally {
+      setOcupado(null);
+      cargar();
+    }
+  }
+
+  return (
+    <section className="superficie p-6 sm:p-8" aria-labelledby="cfg-usuarios">
+      <Encabezado
+        icono={UsersIcon}
+        titulo="Usuarios del estudio"
+        estado={usuarios ? (() => { const n = usuarios.filter((u) => u.activo === 1).length; return n === 1 ? '1 activo' : `${n} activos`; })() : ''}
+        activo={true}
+      />
+      <h3 id="cfg-usuarios" className="sr-only">Usuarios del estudio</h3>
+
+      <ul className="mt-5 flex flex-col divide-y divide-line">
+        {usuarios?.map((u) => {
+          const soyYo = u.id === yo?.id;
+          const inactivo = u.activo !== 1;
+          return (
+            <li key={u.id} className={`flex flex-wrap items-center justify-between gap-3 py-3 ${inactivo ? 'opacity-60' : ''}`}>
+              <div className="min-w-0">
+                <div className="text-[15px] font-bold text-white">
+                  {u.nombre} {u.apellido}
+                  {soyYo && <span className="ml-2 text-xs font-normal text-text-gray-light">(vos)</span>}
+                  {inactivo && <span className="ml-2 text-xs font-normal text-warning">dado de baja</span>}
+                </div>
+                <div className="break-all text-xs text-text-gray-light">{u.email}</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {esTitular && !soyYo && !inactivo ? (
+                  <select
+                    aria-label={`Rol de ${u.nombre} ${u.apellido}`}
+                    className={`${campoClases} h-9 border px-2 text-sm text-white`}
+                    value={u.rol}
+                    disabled={ocupado !== null}
+                    onChange={(e) => void cambiar(u, { rol: e.target.value as RolUsuario })}
+                  >
+                    {ROLES_USUARIO.map((r) => (
+                      <option key={r.valor} value={r.valor}>{r.etiqueta}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs uppercase tracking-[0.08em] text-silver-deep">{etiquetaRol(u.rol)}</span>
+                )}
+                {esTitular && !soyYo && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={botonSecundario}
+                    disabled={ocupado !== null}
+                    onClick={() => void cambiar(u, { activo: inactivo })}
+                  >
+                    {inactivo ? 'Reactivar' : 'Dar de baja'}
+                  </Button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {esTitular && !agregando && (
+        <Button variant="ghost" size="sm" className={`${botonSecundario} mt-4`} onClick={() => setAgregando(true)}>
+          + Agregar usuario
+        </Button>
+      )}
+
+      {esTitular && agregando && (
+        <form onSubmit={(e) => void agregar(e)} className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2" autoComplete="off">
+          <div>
+            <label htmlFor="usr-nombre" className={etiquetaClases}>Nombre</label>
+            <Input id="usr-nombre" className={`${campoClases} mt-1`} value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} required maxLength={100} />
+          </div>
+          <div>
+            <label htmlFor="usr-apellido" className={etiquetaClases}>Apellido</label>
+            <Input id="usr-apellido" className={`${campoClases} mt-1`} value={nuevo.apellido} onChange={(e) => setNuevo({ ...nuevo, apellido: e.target.value })} required maxLength={100} />
+          </div>
+          <div>
+            <label htmlFor="usr-email" className={etiquetaClases}>Email con el que va a entrar</label>
+            <Input id="usr-email" type="email" className={`${campoClases} mt-1`} value={nuevo.email} onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })} required spellCheck={false} />
+          </div>
+          <div>
+            <label htmlFor="usr-rol" className={etiquetaClases}>Rol</label>
+            <select
+              id="usr-rol"
+              className={`${campoClases} mt-1 h-9 w-full border px-2 text-sm text-white`}
+              value={nuevo.rol}
+              onChange={(e) => setNuevo({ ...nuevo, rol: e.target.value as RolUsuario })}
+            >
+              {ROLES_USUARIO.map((r) => (
+                <option key={r.valor} value={r.valor}>{r.etiqueta}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-text-gray-light">{ROLES_USUARIO.find((r) => r.valor === nuevo.rol)?.descripcion}</p>
+          </div>
+          <p className="text-xs leading-relaxed text-text-gray-light sm:col-span-2">
+            Darlo de alta acá no alcanza para que entre: también hay que agregar su email al acceso del panel en Cloudflare.
+          </p>
+          <div className="flex gap-2 sm:col-span-2">
+            <Button type="submit" className={botonPrincipal} disabled={ocupado !== null}>
+              {ocupado === 'nuevo' ? 'Guardando…' : 'Agregar'}
+            </Button>
+            <Button type="button" variant="ghost" className={botonSecundario} onClick={() => setAgregando(false)} disabled={ocupado !== null}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      )}
+
       <Mensaje texto={mensaje?.texto ?? null} tipo={mensaje?.tipo ?? 'ok'} />
     </section>
   );
