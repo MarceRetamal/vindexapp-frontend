@@ -14,6 +14,7 @@ import { api as apiPortal, type DetalleLectura, type EstadoPortal } from '../api
 import { EmptyState } from '../componentes/EmptyState';
 import { EnlacePlazo } from '../componentes/EnlacePlazo';
 import { PropuestaPlazo } from '../componentes/PropuestaPlazo';
+import { pedirRenuncia, resumenRenuncia } from '../lib/renuncia';
 import { usePlazosSugeridos } from '../lib/usePlazosSugeridos';
 import { ErrorBanner } from '../componentes/ErrorBanner';
 import { enlaceSeguro } from '../lib/texto';
@@ -121,6 +122,12 @@ export function Novedades() {
     setTotal((t) => Math.max(0, t - 1));
   }
 
+  function alRenunciar(mensaje: string) {
+    setAviso(mensaje);
+    avisarCambioNovedades();
+    cargar();
+  }
+
   function alMarcarEnBloque(marcadas: number) {
     setAviso(marcadas === 1 ? 'Se marcó 1 novedad como revisada.' : `Se marcaron ${marcadas} novedades como revisadas.`);
     avisarCambioNovedades();
@@ -221,7 +228,7 @@ export function Novedades() {
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.03 } } }}
           >
             {lista.map((n) => (
-              <FilaNovedad key={n.id} novedad={n} sugerencia={sugerencias[n.id]} onRevision={alCambiarRevision} onError={setError} />
+              <FilaNovedad key={n.id} novedad={n} sugerencia={sugerencias[n.id]} onRevision={alCambiarRevision} onRenuncia={alRenunciar} onError={setError} />
             ))}
           </motion.div>
           {lista.length < total && (
@@ -241,11 +248,13 @@ function FilaNovedad({
   novedad,
   sugerencia,
   onRevision,
+  onRenuncia,
   onError,
 }: {
   novedad: Novedad;
   sugerencia?: SugerenciaPlazo;
   onRevision: (id: string, revisadaEn: number | null) => void;
+  onRenuncia: (mensaje: string) => void;
   onError: (mensaje: string | null) => void;
 }) {
   const [abierta, setAbierta] = useState(false);
@@ -277,6 +286,20 @@ function FilaNovedad({
       onRevision(novedad.id, r.revisada_en);
     } catch (e) {
       onError(e instanceof Error ? e.message : 'No se pudo actualizar la novedad.');
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  async function renunciar() {
+    if (!novedad.expediente_id) return;
+    setProcesando(true);
+    onError(null);
+    try {
+      const r = await pedirRenuncia(novedad.expediente_id, novedad.caratula);
+      if (r) onRenuncia(resumenRenuncia(r));
+    } catch (e) {
+      onError(e instanceof Error ? e.message : 'No se pudo registrar la renuncia.');
     } finally {
       setProcesando(false);
     }
@@ -317,6 +340,18 @@ function FilaNovedad({
           <Button variant="ghost" size="sm" onClick={alternarRevision} disabled={procesando} className={botonClases}>
             {revisada ? 'Volver a pendiente' : 'Marcar revisada'}
           </Button>
+          {!revisada && novedad.expediente_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void renunciar()}
+              disabled={procesando}
+              className={botonClases}
+              title="Renunciaste a esta causa pero el portal te sigue notificando: el sistema deja de seguirla"
+            >
+              Ya no intervengo
+            </Button>
+          )}
           {novedad.tiene_texto === 1 && (
             <Button variant="ghost" size="sm" onClick={alternarTexto} className={botonClases}>
               {abierta ? 'Ocultar texto' : 'Ver texto'}
@@ -336,7 +371,7 @@ function FilaNovedad({
         </div>
       </div>
 
-      {!revisada && sugerencia?.propuesta && <PropuestaPlazo novedad={novedad} propuesta={sugerencia.propuesta} />}
+      {!revisada && sugerencia?.propuesta && <PropuestaPlazo novedad={novedad} propuesta={sugerencia.propuesta} tareaId={sugerencia.tarea_id} />}
       {!revisada && sugerencia && !sugerencia.propuesta && sugerencia.motivo && (
         <p className="mt-3 text-xs text-text-gray-light">Sin plazo propuesto: {sugerencia.motivo}</p>
       )}
