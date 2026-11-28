@@ -18,6 +18,8 @@ export interface Expediente {
   inicio: string | null;
   baja: string | null;
   motivo_baja: string | null;
+  /** Día desde el que el abogado ya no interviene (renuncia): el sistema ignora la causa. */
+  renuncia_fecha: string | null;
   notas: string | null;
   creado_en: number;
   cliente_nombre: string | null;
@@ -29,7 +31,17 @@ export interface Expediente {
   novedades_pendientes?: number;
 }
 
+export interface ResultadoRenuncia {
+  expediente: Expediente;
+  novedades_descartadas: number;
+  tareas_automaticas_borradas: number;
+}
+
 export const api = {
+  /** Renuncia al patrocinio: archiva la causa y el sistema deja de seguirla. Se revierte con reactivar. */
+  renunciarExpediente: (id: string, motivo?: string) =>
+    pedido<ResultadoRenuncia>(`/expedientes/${id}/renuncia`, { method: 'PATCH', body: JSON.stringify({ motivo }) }),
+
   listarExpedientes: () => pedido<Expediente[]>(`/expedientes?estudio_id=${ESTUDIO_ID}`),
 
   listarDeCliente: (clienteId: string) => pedido<Expediente[]>(`/expedientes?cliente_id=${encodeURIComponent(clienteId)}`),

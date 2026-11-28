@@ -217,7 +217,7 @@ export function PanelPortal({ expedienteId }: { expedienteId: string }) {
                       <EnlacePlazo novedad={n} />
                     </div>
                     </div>
-                    {!revisada && sugerencias[n.id]?.propuesta && <PropuestaPlazo novedad={n} propuesta={sugerencias[n.id]!.propuesta!} />}
+                    {!revisada && sugerencias[n.id]?.propuesta && <PropuestaPlazo novedad={n} propuesta={sugerencias[n.id]!.propuesta!} tareaId={sugerencias[n.id]!.tarea_id} />}
                   </article>
                 );
               })}
