@@ -9,6 +9,7 @@ import { PanelDocumentos } from '../componentes/PanelDocumentos';
 import { PanelPortal } from '../componentes/PanelPortal';
 import { PanelEstrategia } from '../componentes/PanelEstrategia';
 import { PanelIA } from '../componentes/PanelIA';
+import { pedirRenuncia, resumenRenuncia } from '../lib/renuncia';
 import { EnlaceCliente, SituacionExpediente } from '../componentes/SituacionExpediente';
 import { EstadoBadge } from '../componentes/EstadoBadge';
 import { InsigniaRol, SelectorRol } from '../componentes/RolProfesional';
@@ -50,6 +51,8 @@ export function ExpedienteDetalle() {
   const navegar = useNavigate();
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [versionNotas, setVersionNotas] = useState(0);
+  const [avisoRenuncia, setAvisoRenuncia] = useState<string | null>(null);
+  const [procesandoRenuncia, setProcesandoRenuncia] = useState(false);
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +109,38 @@ export function ExpedienteDetalle() {
     setActuaciones((actuales) =>
       actuales.map((a) => (a.id === actuacionId ? { ...a, notificado: 1, visible: 1 } : a))
     );
+  }
+
+  async function renunciar() {
+    if (!expediente) return;
+    setProcesandoRenuncia(true);
+    setErrorEliminar(null);
+    try {
+      const r = await pedirRenuncia(expediente.id, expediente.caratula);
+      if (r) {
+        setExpediente({ ...expediente, ...r.expediente });
+        setAvisoRenuncia(resumenRenuncia(r));
+      }
+    } catch (e) {
+      setErrorEliminar(e instanceof Error ? e.message : 'No se pudo registrar la renuncia.');
+    } finally {
+      setProcesandoRenuncia(false);
+    }
+  }
+
+  async function reactivarCausa() {
+    if (!expediente) return;
+    setProcesandoRenuncia(true);
+    setErrorEliminar(null);
+    try {
+      const r = await apiExpedientes.reactivarExpediente(expediente.id);
+      setExpediente({ ...expediente, ...r });
+      setAvisoRenuncia(null);
+    } catch (e) {
+      setErrorEliminar(e instanceof Error ? e.message : 'No se pudo reactivar el expediente.');
+    } finally {
+      setProcesandoRenuncia(false);
+    }
   }
 
   async function completarTarea(tareaId: string) {
@@ -173,9 +208,21 @@ export function ExpedienteDetalle() {
         </div>
         <div className="flex flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:shrink-0">
           <EstadoBadge
-            estado={expediente.estado}
-            colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }}
+            estado={expediente.renuncia_fecha ? 'Renunció' : expediente.estado}
+            colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral', Renunció: 'neutral' }}
           />
+          {expediente.estado !== 'Archivado' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={procesandoRenuncia}
+              onClick={() => void renunciar()}
+              title="Ya no intervengo en esta causa: el sistema deja de seguirla"
+              className="rounded-sharp border border-line text-text-gray-light hover:border-warning hover:text-warning"
+            >
+              Renuncié a esta causa
+            </Button>
+          )}
           <BotonEliminar
             etiqueta="Eliminar expediente"
             descripcion={`el expediente "${expediente.caratula}"`}
@@ -190,7 +237,26 @@ export function ExpedienteDetalle() {
 
       {errorEliminar && <ErrorBanner message={errorEliminar} />}
 
-      <PanelRolYCliente expediente={expediente} onCambio={setExpediente} />
+      {avisoRenuncia && <p className="mb-4 text-sm text-success">{avisoRenuncia}</p>}
+      {expediente.renuncia_fecha && (
+        <section className="vidrio mb-6 flex flex-wrap items-center justify-between gap-3 rounded-sharp border border-line p-4">
+          <p className="max-w-2xl text-sm text-silver">
+            Renunciaste a esta causa el {formatearFechaISO(expediente.renuncia_fecha)}. El sistema la ignora: no te avisa, no crea plazos y sus
+            novedades no cuentan como pendientes.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={procesandoRenuncia}
+            onClick={() => void reactivarCausa()}
+            className="rounded-sharp border border-success text-success hover:brightness-125"
+          >
+            Reactivar
+          </Button>
+        </section>
+      )}
+
+      {!expediente.renuncia_fecha && <PanelRolYCliente expediente={expediente} onCambio={setExpediente} />}
 
       <SituacionExpediente expedienteId={id!} actuaciones={actuaciones} tareas={tareas} />
 

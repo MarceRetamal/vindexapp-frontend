@@ -6,7 +6,7 @@ import { api as apiTareas } from '../api/tareas';
 import { Button } from '@/componentes/ui/button';
 import { diasEntre, etiquetaDias, fechaConDia, fechaCorta, hoyEnArgentina } from '../lib/fechas';
 
-type DatosNovedad = Pick<Novedad, 'tipo' | 'numero_causa' | 'expediente_id'>;
+type DatosNovedad = Pick<Novedad, 'id' | 'tipo' | 'numero_causa' | 'expediente_id'>;
 
 /** Enlace a la calculadora con la propuesta ya cargada, para revisarla y confirmarla. */
 export function enlaceDeRevision(propuesta: Propuesta, novedad: DatosNovedad): string {
@@ -28,7 +28,7 @@ export function enlaceDeRevision(propuesta: Propuesta, novedad: DatosNovedad): s
  * convertirlo en tarea. Si los días los dice el proveído se puede crear la tarea directo; si son los supletorios del
  * código hay que revisarlos primero en la calculadora. Nunca se crea nada sin que el abogado toque el botón.
  */
-export function PropuestaPlazo({ novedad, propuesta }: { novedad: DatosNovedad; propuesta: Propuesta }) {
+export function PropuestaPlazo({ novedad, propuesta, tareaId }: { novedad: DatosNovedad; propuesta: Propuesta; tareaId?: string | null }) {
   const [creando, setCreando] = useState(false);
   const [creada, setCreada] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +36,7 @@ export function PropuestaPlazo({ novedad, propuesta }: { novedad: DatosNovedad; 
   const dias = diasEntre(hoyEnArgentina(), propuesta.vencimiento);
   const habiles = propuesta.regimen === 'cpcc' ? 'hábiles' : 'corridos';
   const supletorio = propuesta.origen === 'supletorio';
+  const yaTieneTarea = creada || Boolean(tareaId);
 
   async function crearTarea() {
     setCreando(true);
@@ -47,9 +48,15 @@ export function PropuestaPlazo({ novedad, propuesta }: { novedad: DatosNovedad; 
         expediente_id: novedad.expediente_id ?? undefined,
         descripcion: `${propuesta.dias} días ${habiles} desde la notificación del ${fechaCorta(propuesta.fecha_notificacion)}. ${propuesta.fundamento}`,
         tipo: 'Plazo',
+        notificacion_id: novedad.id,
       });
       setCreada(true);
     } catch (e) {
+      // Ya había una tarea para esta novedad (la creó la lectura automática o otra pestaña): no es un error.
+      if ((e as { cuerpo?: { causa?: string } }).cuerpo?.causa === 'ya_existe') {
+        setCreada(true);
+        return;
+      }
       setError(e instanceof Error ? e.message : 'No se pudo crear la tarea.');
     } finally {
       setCreando(false);
@@ -87,9 +94,10 @@ export function PropuestaPlazo({ novedad, propuesta }: { novedad: DatosNovedad; 
       {error && <p className="mt-2 text-xs text-warning">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {creada ? (
+        {yaTieneTarea ? (
           <span className="inline-flex items-center gap-2 text-sm text-silver">
-            <CheckIcon className="h-4 w-4" strokeWidth={1.8} /> Tarea creada para el {fechaCorta(propuesta.vencimiento)}.{' '}
+            <CheckIcon className="h-4 w-4" strokeWidth={1.8} />{' '}
+            {creada ? `Tarea creada para el ${fechaCorta(propuesta.vencimiento)}.` : `Ya está en tus tareas (vence el ${fechaCorta(propuesta.vencimiento)}).`}{' '}
             <Link to="/tareas" className="underline underline-offset-4 hover:text-white">Ver tareas</Link>
           </span>
         ) : supletorio ? (

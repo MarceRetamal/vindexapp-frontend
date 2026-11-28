@@ -1,3 +1,4 @@
+import { pedirRenuncia } from '../lib/renuncia';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { FolderOpenIcon } from 'lucide-react';
@@ -166,6 +167,19 @@ function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; on
     }
   }
 
+  async function renunciar() {
+    setProcesando(true);
+    setError(null);
+    try {
+      const r = await pedirRenuncia(expediente.id, expediente.caratula);
+      if (r) onCambiado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo registrar la renuncia.');
+    } finally {
+      setProcesando(false);
+    }
+  }
+
   async function reactivar() {
     setProcesando(true);
     setError(null);
@@ -193,7 +207,7 @@ function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; on
         lateral={
           <>
             <MarcaPortal causas={expediente.causas_portal} pendientes={expediente.novedades_pendientes} />
-            <EstadoBadge estado={expediente.estado} colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral' }} />
+            <EstadoBadge estado={expediente.renuncia_fecha ? 'Renunció' : expediente.estado} colorMap={{ Activo: 'success', 'En trámite': 'warning', Archivado: 'neutral', Renunció: 'neutral' }} />
           </>
         }
         acciones={
@@ -206,9 +220,21 @@ function FilaExpediente({ expediente, onCambiado }: { expediente: Expediente; on
                 Reactivar
               </Button>
             ) : (
-              <Button variant="ghost" size="sm" disabled={procesando} onClick={darDeBaja} className="rounded-sharp border border-line text-text-gray-light hover:border-warning hover:text-warning">
-                Dar de baja
-              </Button>
+              <>
+                <Button variant="ghost" size="sm" disabled={procesando} onClick={darDeBaja} className="rounded-sharp border border-line text-text-gray-light hover:border-warning hover:text-warning">
+                  Dar de baja
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={procesando}
+                  onClick={() => void renunciar()}
+                  title="Ya no intervengo en esta causa: el sistema deja de seguirla"
+                  className="rounded-sharp border border-line text-text-gray-light hover:border-warning hover:text-warning"
+                >
+                  Renuncié
+                </Button>
+              </>
             )}
           </>
         }

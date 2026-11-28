@@ -116,6 +116,8 @@ export interface PropuestaPlazo {
 export interface SugerenciaPlazo {
   propuesta: PropuestaPlazo | null;
   motivo: string | null;
+  /** La novedad ya tiene una tarea (automática o creada desde acá): no se ofrece crear otra. */
+  tarea_id?: string | null;
 }
 
 export const apiPlazos = {
